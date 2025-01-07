@@ -1,0 +1,220 @@
+<!-- style.html -->
+
+<style>
+    .background {
+      background-color: #e1dfb6; 
+      padding: 20px; 
+      background-image: url('https://i.imgur.com/KEjnV8N.png');
+      background-repeat: no-repeat; /* Prevent the image from repeating */
+      background-size: cover; /* Cover the entire background */
+      background-position: center; /* Center the image */
+    }
+  
+    /* Custom CSS for form container */
+    .container {
+      background-color: #fff;
+      max-width: 890px; /* Adjust the maximum width as needed */
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  
+    /* Number input arrow visibility */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  
+    input[type="number"] {
+      -moz-appearance: textfield; /* Firefox */
+    }
+  
+    /* Radio button */
+    input[type="radio"] {
+      transform: scale(1.2);
+    }
+  
+    /* Date Code visibility */
+    .hide {
+      display: none !important;
+    }
+  
+    /* Fields after defects visibility */
+    .hidden {
+      display: none !important;
+    }
+  
+    .impedance-hidden {
+      display: none !important;
+    }
+  
+    /* Fieldsets border */
+    .set {
+      border: 1px solid #000; /* Black border */
+      padding: 25px 10px 10px; /* Added padding to the top */
+      margin-top: 30px;
+      position: relative;
+      border-radius: 5px
+    }
+  
+    .set legend {
+      padding: 0 10px; /* Padding to fit text within the border */
+      background: #fff; /* White background to cover the border */
+      position: absolute;
+      top: -16px;
+      left: 20px;
+      margin: 0;
+      display: inline-block;
+      box-sizing: content-box;
+      width: auto;
+      font-size: 20px;
+    }
+  
+    /* Styling for inline form checks (radio buttons) */
+    .form-check-inline {
+      display: flex;
+      gap: 80px; /* Adjust spacing as needed */
+    }
+  
+    /* Custom CSS for form elements with labels beside inputs */
+    .form-group {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      margin-top: 1rem;
+    }
+  
+    .form-label {
+      width: 250px; /* Set a fixed width for the labels */
+      margin-right: 30px; /* Adjust the spacing as needed */
+      white-space: normal; /* Allow text to wrap */
+      padding-top: calc(0.375rem + 1px);
+      text-align: left; /* Align text to the left */
+    }
+  
+    .input-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      margin: 0;
+    }
+  
+    .input-container.row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+  
+    .same-width {
+      width: 100%; 
+    }
+  
+  
+    /* .input-container.col-auto {
+      margin-right: 5px;
+    } */
+  
+    .form-text-below {
+      margin-top: 5px;
+    }
+  
+    .text-danger {
+      margin-top: 1px;
+    }
+  
+    .black-border {
+      border-color: rgba(0, 0, 0, 0.2); /* Set the border to black */
+    }
+  
+    /* Highlight Qty Repair & Qty Reject */
+    .highlight-red {
+      background-color: #FFCCCB;
+      padding: 0 5px;
+    }
+  
+    .highlight-green {
+      background-color: #CBFFD0; 
+      padding: 0 5px;
+    }
+  
+    /* Defects Reason Header */
+    .fieldset-header {
+      position: relative;
+    }
+  
+    /* Close Button */
+    .close-btn {
+      position: absolute; /* Position relative to the .set container */
+      top: -5px; /* Distance from the top of the .set container */
+      right: 15px; /* Distance from the right of the .set container */
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 33px;
+      color: red;
+    }
+  
+    .close-button {
+      color: red;
+      float: left;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  
+    /* Modal styles */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgb(0,0,0); /* Fallback color */
+      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    }
+  
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; /* 15% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%; /* Could be more or less, depending on screen size */
+    }
+    
+  
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+  
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+  
+    th {
+      background-color: #f2f2f2;
+    }
+  
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  
+    /* Buttons Style */
+    .buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px; /* Space between the buttons */
+      margin-top: 20px; /* Add some space above the buttons if needed */
+    }
+  
+  
+  
+  </style>
+  

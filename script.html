@@ -1,0 +1,3325 @@
+<!--  script.html -->
+
+<script>
+    // ------------------------------------------------------------------------------------------
+    // FIELD VALIDATION
+    // ------------------------------------------------------------------------------------------
+    let employeeIds = [];
+    let fullLotIds = [];
+  
+    // General error handling 
+    function showError(input, error, message) {
+      error.textContent = message;
+      if (!input.classList.contains('is-invalid')) {
+        input.classList.add('is-invalid');
+      }
+      if (!error.classList.contains('text-danger')) { // Ensure red text for the error
+        error.classList.add('text-danger');
+      }
+    }
+  
+    function clearValidationError(input, error) {
+      error.textContent = '';
+      if (input.classList.contains('is-invalid')) {  // Only remove the class if the error is being cleared
+        input.classList.remove('is-invalid');
+      }
+      if (error.classList.contains('is-invalid')) {
+        error.classList.remove('is-invalid');
+      }
+    }
+  
+    // Fetch employee IDs from Google Apps Script
+    function loadEmployeeIds() {
+      google.script.run.withSuccessHandler(function(ids) {
+        employeeIds = JSON.parse(ids).map(id => id.toString().trim());  // Store fetched IDs 
+      }).getEmployeeIds();
+    }
+  
+    function loadFullLotIds(spreadsheetId, sheetName, range, successVariableName) {
+      google.script.run.withSuccessHandler(function(ids) {
+        window[successVariableName] = JSON.parse(ids).map(id => id.toString().trim());
+      })
+      .withFailureHandler(function(error) {
+        console.error(`Error loading Full Lot IDs (${successVariableName}):`, error.message);
+      })
+      .getFullLotIds(spreadsheetId, sheetName, range);
+    }
+  
+    // Validate required fields
+    function validateRequired(input, error, fieldName) {
+      if (input.type === 'radio') {
+        const radioButtons = document.querySelectorAll(`input[name='${input.name}']`);
+        const isChecked = [...radioButtons].some(button => button.checked);
+        isChecked ? clearValidationError(radioButtons[0], error) : showError(radioButtons[0], error, `Please select an option for ${fieldName}.`);
+        radioButtons.forEach(button => button.classList.toggle('is-invalid', !isChecked));
+        return isChecked;
+      } 
+      else if (input.tagName === 'SELECT') {
+        const isEmpty = input.value.trim() === '';
+        isEmpty ? showError(input, error, `Please select a value for ${fieldName}.`) : clearValidationError(input, error);
+        return !isEmpty;
+      }
+      else if (input.type === 'text') {
+        const isEmpty = input.value.trim() === '';
+        isEmpty ? showError(input, error, `Please provide a value for ${fieldName}.`) : clearValidationError(input, error);
+        return !isEmpty;
+      }
+      return true;
+    }
+  
+    // Validate integers
+    function validateInteger(input, error, fieldName) {
+      const value = input.value.trim();
+  
+      // Check if the value is a valid number
+      if (!/^-?\d+$/.test(value)) {
+        showError(input, error, `${fieldName} must be a numeric value.`);
+        return false;
+      }
+  
+      const numValue = parseInt(value, 10);
+      
+      // Check if the number is positive
+      if (numValue < 0) {
+        showError(input, error, `${fieldName} must be a positive value.`);
+        return false;
+      }
+  
+      // Clear any error if both conditions pass
+      clearValidationError(input, error);
+      return true;
+    }
+  
+    // Validate length
+    function validateLength(input, error, fieldName, length) {
+      return input.value.length === length ? (clearValidationError(input, error), true) : (showError(input, error, `Please input ${length} characters for ${fieldName}.`), false);
+    }
+  
+    // Validate pattern
+    function validatePattern(input, error, fieldName, pattern, message) {
+      return pattern.test(input.value) ? (clearValidationError(input, error), true) : (showError(input, error, message), false);
+    }
+  
+    // Validate range
+    function validateRange(input, error, fieldName, min, max) {
+      const value = parseInt(input.value, 10);
+      const isValid = value >= min && value <= max;
+      isValid ? clearValidationError(input, error) : showError(input, error, `${fieldName} must be between ${min} and ${max}.`);
+      return isValid;
+    }
+  
+    // Validate non-zero
+    function validateNonZero(input, error, fieldName) {
+      const value = parseInt(input.value, 10);
+      return value !== 0 ? (clearValidationError(input, error), true) : (showError(input, error, `${fieldName} cannot be zero.`), false);
+    }
+  
+    // Validate Employee ID
+    function validateEmployeeId(input, error) {
+      const value = input.value.trim();
+      if (employeeIds.includes(value)) {
+        clearValidationError(input, error);
+        return true;
+      }
+      else {
+        showError(input, error, 'Invalid Employee ID.');
+        return false;
+      }
+    }
+  
+    // Validate value less than or equal
+    function validateLessThanOrEqual(input, error, fieldName, otherFieldId) {
+      const otherValue = parseInt(document.getElementById(otherFieldId).value, 10);
+      const inputValue = parseInt(input.value, 10);
+      const isValid = inputValue <= otherValue;
+      isValid ? clearValidationError(input, error) : showError(input, error, `${fieldName} should not be greater than ${document.getElementById(otherFieldId).getAttribute('data-label')}.`);
+      return isValid;
+    }
+    
+    // Validate individual field
+    function validateField(input, error, fieldName, validationRules) {
+      if (!input || typeof input !== 'object') {
+          console.error('Invalid input element:', input);
+          return false;
+      }
+  
+      clearValidationError(input, error);
+  
+      const value = input.value.trim();
+  
+      if (!value && !validationRules.includes('required')) {
+        return true;
+      }
+  
+      for (let rule of validationRules) {
+        switch (rule) {
+          case 'required':
+            if (!validateRequired(input, error, fieldName)) return false;
+            break;
+          case 'integer':
+            if (!validateInteger(input, error, fieldName)) return false;
+            break;
+          case 'length6':
+            if (!validateLength(input, error, fieldName, 6)) return false;
+            break;
+          case 'length8':
+            if (!validateLength(input, error, fieldName, 8)) return false;
+            break;
+          case 'length4':
+            if (!validateLength(input, error, fieldName, 4)) return false;
+            break;
+          case 'pattern_S5A':
+            if (!validatePattern(input, error, fieldName, /^S\d{5}_[A-Z]$/i, 'Please follow SXXXXX_A format.')) return false;
+            break;
+          case 'range5to300':
+            if (!validateRange(input, error, fieldName, 5, 300)) return false;
+            break;
+          case 'range100to300':
+            if (!validateRange(input, error, fieldName, 100, 300)) return false;
+            break;
+          case 'range10to20':
+            if (!validateRange(input, error, fieldName, 10, 20)) return false;
+            break;
+          case 'nonZero':
+            if (!validateNonZero(input, error, fieldName)) return false;
+            break;
+          case 'allowedValues':
+            if (!validateEmployeeId(input, error)) return false;
+            break;
+          default:
+            if (rule.startsWith('lessThanOrEqual:')) {
+                const otherFieldId = rule.split(':')[1];
+                if (!validateLessThanOrEqual(input, error, fieldName, otherFieldId)) return false;
+            }
+            break;
+        }
+      }
+  
+      //clearValidationError(input, error);
+  
+      return true;
+    }
+  
+    // Ensure at least 1 field has a non-zero value
+    function validateNonZeroInFieldset(inputIds, errorElement, fieldsetName) {
+      const isAnyNonZero = inputIds.some(inputId => {
+        const field = document.getElementById(inputId);
+        if (field) {
+          return validateNonZero(field, errorElement, fieldsetName);
+        }
+        return false;
+      });
+  
+      errorElement.textContent = isAnyNonZero ? '' : `At least one field in ${fieldsetName} must have a non-zero value.`;
+  
+      inputIds.forEach(inputId => {
+        const field = document.getElementById(inputId);
+        if (field) {
+          field.classList.toggle('is-invalid', !isAnyNonZero);
+        }
+      });
+  
+      return isAnyNonZero;
+    }
+  
+    // Ensure at least 1 field is filled
+    function validateAnyFieldFilled(inputIds, errorElement, fieldsetName) {
+      const isAnyFieldFilled = inputIds.some(inputId => {
+        const input = document.getElementById(inputId);
+        return input ? validateRequired(input, errorElement, fieldsetName) : false;
+        // const result = input && input.value.trim() !== '';
+        return result;
+      });
+  
+      // If no fields are filled, display an error message
+      errorElement.textContent = isAnyFieldFilled ? '' : `At least one field must be filled out in ${fieldsetName}.`;
+  
+      // Toggle 'is-invalid' class based on whether any field is filled
+      inputIds.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+          if (isAnyFieldFilled) {
+            input.classList.remove('is-invalid');
+          } 
+          else {
+            input.classList.add('is-invalid');
+          }
+        }
+      });
+  
+      return isAnyFieldFilled;
+    }
+  
+    function validateFieldset(inputIds, errorElement, fieldsetName, validationRules) {
+      // Ensure the inputIds is an array and not empty
+      if (!Array.isArray(inputIds) || inputIds.length === 0) {
+        console.error('Input IDs are invalid or missing:', inputIds);
+        return false;
+      }
+  
+      for (let rule of validationRules) {
+        switch (rule) {
+          case 'anyFieldFilled':
+            if (!validateAnyFieldFilled(inputIds, errorElement, fieldsetName)) return false;
+            break;
+          
+          case 'nonZeroFieldset':
+            if (!validateNonZeroInFieldset(inputIds, errorElement, fieldsetName)) return false;
+            break;
+        }
+      }
+      return  true;
+    }
+  
+    // Validate Full Lot ID
+    function validateFullLotId (splitIdInput, lotIdInput, lotIdSuffixInput, error, fullLotIds) {
+      const splitId = (document.getElementById('split_id').value.trim() || '').toUpperCase();
+      const lotId = document.getElementById('lot_id').value.trim() || '';
+      const lotIdSuffix = (document.getElementById('lot_id_suffix').value.trim() || '').toUpperCase();
+      
+      const fullLotId = splitId + lotId + lotIdSuffix;
+  
+      if (fullLotIds.includes(fullLotId)) {
+        showError(lotIdInput, error, 'Lot ID already exists.');
+        return false;
+      }
+      else {
+        clearValidationError(lotIdInput, error);
+        return true;
+      }
+    }
+  
+    // Calculate total qty fallout
+    function validateTotalQtyFallout() {
+      const mfgQty = parseInt(document.getElementById('mfg_qty').value);
+      const testedQty = parseInt(document.getElementById('tested_qty').value);
+      const firstPassedQty = parseInt(document.getElementById('first_passed_qty').value);
+      const openQty = parseInt(document.getElementById('open').value);
+      const shortQty = parseInt(document.getElementById('short').value);
+      const sdpQty = parseInt(document.getElementById('SDP').value);
+  
+      let isValid = true;
+      const totalQtyError = document.getElementById('total_qty_error');
+      totalQtyError.textContent = '';
+  
+      // Check if all fields have values
+      if (
+        isNaN(mfgQty) || isNaN(testedQty) || isNaN(firstPassedQty) || 
+        isNaN(openQty) || isNaN(shortQty) || isNaN(sdpQty) || // Check for empty fields
+        mfgQty < 0 || testedQty < 0 || firstPassedQty < 0 || 
+        openQty < 0 || shortQty < 0 || sdpQty < 0 // Check for negative values
+      ){
+        isValid = false;
+      }
+      else {
+        // First condition: Mfg Qty must equal sum of all individual quantities
+        if (mfgQty !== openQty + shortQty + sdpQty + firstPassedQty) {
+          totalQtyError.textContent = 'Mfg Qty must equal Open + Short + SDP + 1st Passed Qty';
+          isValid = false;
+        }
+        // Second condition: Tested Qty must equal sum of open, short, and first passed quantities
+        else if (testedQty !== openQty + shortQty + firstPassedQty) {
+          totalQtyError.textContent = 'Open + Short + 1st Passed Qty must equal Tested Qty';
+          isValid = false;
+        }
+        // Third condition: Mfg Qty must equal sum of SDP and Tested Qty
+        else if (mfgQty !== sdpQty + testedQty) {
+          totalQtyError.textContent = 'SDP + Tested Qty must equal Mfg Qty';
+          isValid = false;
+        }
+      }
+  
+      return isValid;
+    }
+  
+    // Calculate final passed qty
+    function validateFinalPassedQty() {
+      let isValid = true;
+  
+      // Get Tested Qty and Final Passed Qty
+      const testedQtyInput = document.getElementById('tested_qty');
+      const finalPassedQtyInput = document.getElementById('final_passed_qty');
+  
+      // Get values from inputs, or default to 0 if empty
+      const testedQty = testedQtyInput ? parseInt(testedQtyInput.value) || 0 : 0;
+      const finalPassedQtyValue = finalPassedQtyInput ? parseInt(finalPassedQtyInput.value) || 0 : 0;
+  
+      // Check if all fields have value
+      if (!testedQtyInput.value || !finalPassedQtyInput.value) {
+        // No validation if either field is not filled
+        return;
+      }
+  
+      // Initialise total quantity fallout
+      let totalQtyFallout = 0;
+  
+      // Sum values from input elements
+      const sumValues = (inputIds) => {
+        inputIds.forEach(id => {
+          const input = document.getElementById(id);
+          if (input && input.value) {
+            const value = parseInt(input.value) || 0;
+            totalQtyFallout += value; // Sum the value
+          }
+        });
+      };
+  
+      // Handle Open Circuit Defects
+      if (openSelectedValues.length > 0) {
+        openSelectedValues.forEach(value => {
+          switch (value) {
+            // Innerlayer Open
+            case 'Innerlayer Open':
+              sumValues(['080_il_strip']);
+              break;
+            // Void Hole
+            case 'Void Hole':
+              sumValues(['chema_180_ol_cm_dm_o']);
+              break;
+            // Partial Feature (Blind Via Void)
+            case 'Partial Feature (Blind Via Void)':
+              sumValues(['chema_477_ol_cm_dm_o']);
+              break;
+            // Lifted Feature (Circuit Peel-Off)
+            case 'Lifted Feature (Circuit Peel-Off)':
+              sumValues(['473_ol_lpsm_cure', '473_ol_cm_osp', '473_ol_cm_strp']);
+              break;
+            // Missing Hole
+            case 'Missing Hole':
+              sumValues(['133_ol_drl']);
+              break;
+            // Outerlayer Open
+            case 'Outerlayer Open':
+              sumValues(['outerlayer_open_repair', 'photoprint_080_ol_pp_dev']);
+              break;
+            // Mask on Pad/Finger
+            case 'Mask on Pad/Finger':
+              sumValues(['mask_on_pad_finger_repair', '205_ol_sm_cure']);
+              break;
+            // Plating Nodule (Particle in Hole)
+            case 'Plating Nodule (Particle in Hole)':
+              sumValues(['plating_nodule_repair', '178_ol_cm_strp']);
+              break;
+            // Legend on Pad/Hole
+            case 'Legend on Pad/Hole':
+              sumValues(['legend_on_pad_hole_repair', '233_ol_lpsm_cure']);
+              break;
+            // Others Open
+            case 'Others Open':
+              sumValues(['others_open_repair', 'others_open_reject']);
+              break;
+            // False o/c
+            case 'False o/c':
+              sumValues(['false_oc_repair']);
+              break;
+          }
+        });
+      }
+  
+      // Handle Short Circuit Defects
+      if(shortSelectedValues.length > 0) {
+        shortSelectedValues.forEach(value => {
+          switch (value) {
+            // Short (Plating Under Resist) (Dry Film Flake-Off)
+            case 'Short (Plating Under Resist) (Dry Film Flake-Off)':
+              sumValues(['short_repair', 'photoprint_083_ol_pp_dev']);
+              break;
+            // Scratches
+            case 'Scratches':
+              sumValues(['scratches_repair', 'photoprint_483_ol_pp_dev', 'chemb_483_ol_cm_strp', 'chemc_483_ol_cm_osp']);
+              break;
+            // Cu Residue
+            case 'Cu Residue':
+              sumValues(['cu_residue_repair', 'chemb_172_ol_cm_strp']);
+              break;
+            // Under-etch
+            case 'Under-etch':
+              sumValues(['under_etch_repair', 'chemb_076_ol_cm_strp']);
+              break;
+            // Innerlayer Short
+            case 'Innerlayer Short':
+              sumValues(['083_il_strip']);
+              break;
+            // Mis-registration
+            case 'Mis-registration':
+              sumValues(['mis_registration_repair', '471_ol_lam', '469_ol_lam']);
+              break;
+            // Hole Shifted
+            case 'Hole Shifted':
+              sumValues(['132_ol_drl']);
+              break;
+            // Short (Mirco-short)
+            case 'Short (Mirco-short)':
+              sumValues(['micro_short_repair', 'chemb_083_ol_cm_strp', 'lpsm_083_ol_sm_cure']);
+              break;
+            // Incomplete Solder Strip (Solder Short)
+            case 'Incomplete Solder Strip (Solder Short)':
+              sumValues(['incomplete_solder_strip_repair', 'chemc_256_ol_cm_osp']);
+              break;
+            // Feathering (AU Bridging)
+            case 'Feathering (AU Bridging)':
+              sumValues(['feathering_repair', 'chemc_250_ol_cm_osp']);
+              break;
+            // Incomplete Resist Strip
+            case 'Incomplete Resist Strip':
+              sumValues(['incomplete_resist_strip_repair', 'chemb_51_ol_cm_strp']);
+              break;
+            // NPTH Short
+            case 'NPTH Short':
+              sumValues(['npth_short_repair', '142'])
+            // Short (Others)
+            case 'Short (Others)':
+              sumValues(['short_others_repair', 'short_others_reject']);
+              break;
+            // Pit & Dent (Others)
+            case 'Pit & Dent (Others)':
+              sumValues(['479_ol_lam', '479_ol_pp_dev']);
+              break;
+            // Foil Wrinkle (Others)
+            case 'Foil Wrinkle (Others)':
+              sumValues(['32_ol_lam']);
+              break;
+          }
+        });
+      }
+  
+      // Calculate the final passed quantity
+      const finalPassedQty = testedQty - totalQtyFallout;
+  
+      // Validate the final passed quantity
+      const errorElement = document.getElementById('final_passed_qty_error');
+  
+      if (finalPassedQtyValue !== finalPassedQty) {
+        errorElement.textContent = 'Final Passed Qty must equal Tested Qty minus the total of Open and Short Circuit values.';
+        finalPassedQtyInput.classList.add('is-invalid');
+        isValid = false;
+        return false;
+      } 
+      else {
+        errorElement.textContent = '';
+        finalPassedQtyInput.classList.remove('is-invalid');
+        return true;
+      }
+  
+      // Return the final passed quantity
+      return finalPassedQty;
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // UTILITY FUNCTIONS
+    // ------------------------------------------------------------------------------------------
+    // Toggles visibility of an element 
+    function toggleFormElementVisibility (elementId, show, formType) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        const className = formType === 1 ? 'hide' : 'hidden'
+        if(show) {
+          element.classList.remove(className);
+        }
+        else {
+          element.classList.add(className);
+        }
+      }
+      else {
+        console.error("Element not found.");
+      }
+    }
+  
+    // Resets input element by removing 'is-invalid' class & resetting values
+    function resetInputElement(input) {
+      input.classList.remove('is-invalid');
+      if(input.tagName === 'SELECT') {
+        input.selectedIndex = 0;
+      }
+      else if (input.type === 'text') {
+        input.value = '';
+      }
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // ERROR HANDLING
+    // ------------------------------------------------------------------------------------------
+    function clearError(elementId) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.textContent = '';
+        element.classList.remove('text-danger', 'fieldset-error');
+      }
+    }
+  
+    // Clears error message in a individual field
+    function clearErrorMessage(event) {
+      if (!isFormSubmitted) return;
+  
+      const input = event.target;
+  
+      const errorElementId = input.id + '_error';
+      clearError(errorElementId);
+  
+      input.classList.remove('is-invalid');
+  
+      // Clear error for all related radio buttons if input is a radio
+      if (input.type === 'radio') {
+        const radioButtons = document.querySelectorAll(`input[name='${input.name}']`);
+        radioButtons.forEach(button => clearError(button.id));
+      }
+  
+      // Clear any overall form error messages
+      clearValidationError('total_qty_error');
+    }
+  
+    // Clears the error message in a fieldset
+    function clearFieldsetErrorMessage(inputIds, errorElement) {
+      if (errorElement) {
+        errorElement.textContent = '';
+      }
+  
+      inputIds.forEach(inputId => clearError(inputId));
+    }
+  
+    // Resets error messages & inputs for all fields in a fieldset
+    function resetFieldsetErrors(fieldsetId) {
+      if (!fieldsetId) return;
+  
+      // Ensure fieldsetId is a string and not a DOM element
+      if (fieldsetId instanceof HTMLElement) {
+        // Extract the id from the DOM element
+        fieldsetId = fieldsetId.id; 
+      }
+  
+      // Construct the error message element ID based on the fieldset ID
+      const errorMessageElementId = fieldsetId.replace('_details', '_error');
+      clearError(errorMessageElementId);
+  
+      // Get the fieldset element
+      const fieldsetElement = document.getElementById(fieldsetId);
+      if (fieldsetElement) {
+        // Find all input elements within the fieldset
+        const inputs = fieldsetElement.querySelectorAll('input, select, textarea');
+        
+        // Remove error messages and 'is-invalid' class from each input element
+        inputs.forEach(input => {
+          clearError(`${input.id}_error`);
+          resetInputElement(input);
+        });
+      }
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // FIELDSET MANAGEMENT
+    // ------------------------------------------------------------------------------------------
+    // Toggle the visibility of dropdowns, impedance fail and final passed qty
+    function toggleDropdown() {
+      const openInput = document.getElementById('open');
+      const shortInput = document.getElementById('short');
+      const impedanceFailYes = document.getElementById('impedance_fail_yes');
+  
+      const openValue = openInput.value.trim();
+      const shortValue = shortInput.value.trim();
+  
+      // Toggle visibility of dropdown based on input value
+      toggleFormElementVisibility('open_circuit_dropdown', openValue > 0, 2);
+  
+      if (openValue <= 0) {
+        // If openValue is 0 or less, hide associated fieldsets and reset dropdown
+        handleFieldsets(openSelectedValues, 'open');
+        updateDropdown('open');
+      }
+  
+      toggleFormElementVisibility('short_circuit_dropdown', shortValue > 0, 2);
+  
+      if (shortValue <= 0) {
+        // If shortValue is 0 or less, hide associated fieldsets and reset dropdown 
+        handleFieldsets(shortSelectedValues, 'short');
+        updateDropdown('short');
+      }
+  
+      // Toggle visibiltiy of impedance fail & final passed qty
+      let showImpedanceAndFinalQty = openValue > 0 || shortValue > 0;
+      toggleFormElementVisibility('impedance_fail', showImpedanceAndFinalQty, 2);
+      toggleFormElementVisibility('final_passed_qty_div', showImpedanceAndFinalQty, 2);
+  
+      const shouldShowImpedanceFailDetails = impedanceFailYes.checked;
+      toggleFormElementVisibility('impedance_fail_qty_details', shouldShowImpedanceFailDetails, 2);
+  
+      // Clear errors for impedance fail details if hiding
+      if (!shouldShowImpedanceFailDetails) {
+        resetFieldsetErrors('impedance_fail_qty_details');
+      }
+    }
+  
+    // Helper function manage currently visible fieldsets based on selection
+    function manageFieldsetVisibility(selectedValues, fieldsetObj, showFieldsetFunction, circuitType) {
+      selectedValues.forEach(value => showFieldset(value, fieldsetObj, circuitType));
+    }
+  
+    // Handles the hiding and resetting of fieldsets based on selected values
+    function handleFieldsets(selectedValues, circuitType) {
+      selectedValues.forEach(value => {
+        const fieldsetId = getFieldsetId(value, circuitType);
+        if (fieldsetId) {
+          resetFieldsetErrors(fieldsetId);
+  
+          // Hide the fieldset by adding a hidden class
+          const fieldsetElement = document.getElementById(fieldsetId);
+          if (fieldsetElement) {
+            fieldsetElement.classList.add('hidden');
+  
+            // Remove value from the selected values array
+            removeFromSelectedValues(circuitType, fieldsetId);
+          }
+          else {
+            console.error(`Fieldset not found for ID: ${fieldsetId}`);
+          }
+        }
+        else {
+          console.error(`No fieldsetId found for value: ${value}`);
+        }
+      });
+  
+      updateDropdown(circuitType);
+    }
+  
+    // Toggle the visibility of inputs 
+    function showFieldset(value, fieldsetObj, circuitType) {
+      const fieldsetId = fieldsetObj[value];
+      if (fieldsetId) {
+        const fieldset = document.getElementById(fieldsetId);
+        if (fieldset) {
+          fieldset.classList.remove('hidden');
+  
+          addCloseButton(fieldset, circuitType);
+        } else {
+          console.error("Fieldset not found:", fieldsetId);
+        }
+      }
+    }
+    
+    // Retrieves fieldset ID for Open Circuit based on selected value
+    function getFieldsetId(value, circuitType) {
+      return circuitType === 'open' ? openCircuitFieldsets[value] : shortCircuitFieldsets[value];
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // DROPDOWN MANAGEMENT
+    // ------------------------------------------------------------------------------------------
+    // Update dropdowns based on current selection
+    function updateDropdown(circuitType) {
+      const dropdown = document.getElementById(`${circuitType}_circuit_defect`);
+      dropdown.selectedIndex = -1;  // Reset dropdown to default state
+    }
+  
+    // Adds circuit selection to array
+    function addCircuitSelection(circuitType, selectedValues) {
+      const dropdown = document.getElementById(`${circuitType}_circuit_defect`);
+      const newSelections = Array.from(dropdown.selectedOptions).map(option => option.value);
+  
+      const uniqueValues = Array.from(new Set([...selectedValues, ...newSelections]));
+  
+      // Update the global selected values array (this should update openSelectedValues or shortSelectedValues)
+      if (circuitType === 'open') {
+        openSelectedValues = uniqueValues; // Update openSelectedValues
+      } else if (circuitType === 'short') {
+        shortSelectedValues = uniqueValues; // Update shortSelectedValues
+      }
+  
+      manageFieldsetVisibility(uniqueValues, circuitType === 'open' ? openCircuitFieldsets : shortCircuitFieldsets, showFieldset, circuitType);
+      
+      document.getElementById(`${circuitType}_circuit_selection`).value = uniqueValues.join(',');
+    }
+  
+    // Object for Open Circuit fieldsets
+    const openCircuitFieldsets = {
+      'Innerlayer Open': 'innerlayer_open_details',
+      'Void Hole': 'void_hole_details',
+      'Partial Feature (Blind Via Void)': 'partial_feature_details',
+      'Lifted Feature (Circuit Peel-Off)': 'lifted_feature_details',
+      'Missing Hole': 'missing_hole_details',
+      'Outerlayer Open': 'outerlayer_open_details',
+      'Mask on Pad/Finger': 'mask_on_pad_finger_details',
+      'Plating Nodule (Particle in Hole)': 'plating_nodule_details',
+      'Legend on Pad/Hole': 'legend_on_pad_hole_details',
+      'Others Open': 'others_open_details',
+      'False o/c': 'false_oc_details'
+    }
+  
+    // Object for Short Circuit fieldsets
+    const shortCircuitFieldsets = {
+      'Short (Plating Under Resist) (Dry Film Flake-Off)': 'short_details',
+      'Scratches': 'scratches_details',
+      'Cu Residue': 'cu_residue_details',
+      'Under-etch': 'under_etch_details',
+      'Innerlayer Short': 'innerlayer_short_details',
+      'Mis-registration': 'mis_registration_details',
+      'Hole Shifted': 'hole_shifted_details',
+      'Short (Mirco-short)': 'micro_short_details',
+      'Incomplete Solder Strip (Solder Short)': 'incomplete_solder_strip_details',
+      'Feathering (AU Bridging)': 'feathering_details',
+      'Incomplete Resist Strip': 'incomplete_resist_strip_details',
+      'NPTH Short': 'npth_short_details',
+      'Short (Others)': 'short_others_details',
+      'Pit & Dent (Others)': 'pit_dent_details',
+      'Foil Wrinkle (Others)': 'foil_wrinkle_details'
+    }
+  
+    // Arrays to store selected values
+    let openSelectedValues = [];
+    let shortSelectedValues = [];
+  
+    // Add close button to remove fieldset
+    function addCloseButton(fieldset, circuitType) {
+      const fieldsetHeader = fieldset.querySelector('.fieldset-header');
+  
+      if (fieldsetHeader) {
+        const existingCloseButton = fieldsetHeader.querySelector('.close-btn');
+  
+        if (!existingCloseButton) {
+          const closeButton = document.createElement('button');
+          closeButton.type = 'button';
+          closeButton.className = 'close-btn';
+          closeButton.innerHTML = '&times;';
+  
+          closeButton.onclick = () => {
+            const fieldsetId = fieldset.id;
+            if (fieldsetId) {
+              resetFieldsetErrors(fieldsetId);
+              fieldset.classList.add('hidden');
+              removeFromSelectedValues(circuitType, fieldsetId);
+              updateDropdown(circuitType);
+            }
+            else {
+              console.error('No ID found for fieldset element')
+            }
+          };
+  
+          fieldset.appendChild(closeButton);
+        }
+        else {
+          console.error(`Close button already exists in fieldset with ID ${fieldset.id}`)
+        }
+      }
+      else {
+        console.error(`Fieldset header not found in fieldset with ID ${fieldset.id}`)
+      }
+    }
+  
+    // Remove selected values from array
+    function removeFromSelectedValues(circuitType, fieldsetId) {
+      let selectedValuesArray;
+      let fieldsets;
+  
+      // Determine which array and fieldset mapping to use based on the circuit type
+      if (circuitType === 'open') {
+        selectedValuesArray = openSelectedValues;
+        fieldsets = openCircuitFieldsets;
+      } else if (circuitType === 'short') {
+        selectedValuesArray = shortSelectedValues;
+        fieldsets = shortCircuitFieldsets;
+      }
+  
+      // Find the value that corresponds to the fieldsetId
+      const valueToRemove = Object.keys(fieldsets).find(key => fieldsets[key] === fieldsetId);
+  
+      if (valueToRemove) {
+        // Remove the value from the selected values array
+        const index = selectedValuesArray.indexOf(valueToRemove);
+        if (index !== -1) {
+          selectedValuesArray.splice(index, 1);
+        }
+  
+        // Update the hidden input field value
+        const hiddenInputField = circuitType === 'open' ? 'open_circuit_selection' : 'short_circuit_selection';
+        document.getElementById(hiddenInputField).value = selectedValuesArray.join(',');
+  
+        // Reset the values of all input fields within the fieldset
+        const fieldset = document.getElementById(fieldsetId);
+        if (fieldset) {
+          resetFieldsetErrors(fieldset);
+        }
+  
+      } else {
+        console.error(`No matching value found for fieldset ID: ${fieldsetId}`);
+      }
+    }
+  
+    // Remove fieldset
+    function removeFieldset(fieldsetId) {
+      const fieldset = document.getElementById(fieldsetId);
+      if (fieldset) {
+        resetFieldsetErrors(fieldsetId)
+        fieldset.parentNode.removeChild(fieldset);
+      }
+      else {
+        console.error(`Fieldset with ID ${fieldsetId} not found.`)
+      }
+    }
+  
+    // Hide all fieldsets
+    function hideAllFieldsets() {
+      const fieldsets = document.querySelectorAll('.fieldset-container');
+      fieldsets.forEach(fieldset => {
+        fieldset.classList.add('hidden');
+      });
+    }
+  
+    // Remove all fieldsets
+    function removeAllFieldsets() {
+      const closeButtons = document.querySelectorAll('.close-btn');
+      closeButtons.forEach(button => { 
+        const fieldset = button.closest('fieldset');
+        if (fieldset) {
+          removeFieldset(fieldset.id);
+        }
+      });
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // RESET FORM
+    // ------------------------------------------------------------------------------------------
+    function resetForm() {
+      // Reset the form itself
+      document.getElementById('mainForm').reset();
+  
+      // Reset toggle states
+      wasDateCodeInputToggled = false;
+      isFormSubmitted = false;
+  
+      // Hide initially hidden elements
+      const elementsToHideWithHideClass = [
+        'date_code_input_div',
+        'for_4wire_input_div'
+      ];
+  
+      elementsToHideWithHideClass.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.classList.add('hide');
+      });
+  
+      const elementsToHideWithHiddenClass = [
+        'open_circuit_dropdown',
+        'short_circuit_dropdown',
+        'impedance_fail',
+        'impedance_fail_qty_details',
+        'final_passed_qty_div'
+      ];
+  
+      elementsToHideWithHiddenClass.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.classList.add('hidden');
+      });
+  
+      // Reset selected values arrays
+      openSelectedValues = [];
+      shortSelectedValues = [];
+  
+      // Reset hidden input fields
+      const hiddenInputs = [
+        'open_circuit_selection',
+        'short_circuit_selection'
+      ];
+      hiddenInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+      });
+  
+      // Reset dropdowns
+      if (typeof resetOpenCircuitDropdown === 'function') resetOpenCircuitDropdown();
+      if (typeof resetShortCircuitDropdown === 'function') resetShortCircuitDropdown();
+  
+      // Hide all fieldsets and remove dynamically added fieldsets
+      if (typeof hideAllFieldsets === 'function') hideAllFieldsets();
+      // if (typeof removeAllFieldsets === 'function') removeAllFieldsets();
+  
+      // Reset error messages and remove validation classes
+      const errorElements = document.querySelectorAll('.error-message, .is-invalid');
+      errorElements.forEach(el => {
+        el.textContent = '';
+        el.classList.remove('is-invalid');
+      });
+  
+      // Re-hide elements with .fieldset-container class
+      const fieldsetContainers = document.querySelectorAll('.fieldset-container');
+      fieldsetContainers.forEach(container => container.classList.add('hidden'));
+  
+      // Reinitialize any necessary form elements to ensure immediate validation works
+      if (typeof attachImmediateValidation === 'function') attachImmediateValidation();
+    }
+  
+    //------------------------------------------------------------------------------------------
+    // FORM VALIDATION
+    // ------------------------------------------------------------------------------------------
+    function logValidate(input, errorElement, fieldName, rules) {
+      if (!input || !errorElement) {
+        console.error(`Element for ${fieldName} is missing`);
+        return false;
+      }
+      const valid = validateField(input, errorElement, fieldName, rules);
+      return valid;
+    }
+  
+    function logValidateFieldset(inputIds, errorElement, fieldName, rules) {
+      if (!inputIds || !Array.isArray(inputIds) || inputIds.length === 0) {
+        console.error(`Input IDs for ${fieldName} are missing or invalid`);
+        return false;
+      }
+      if (!errorElement) {
+        console.error(`Error element for ${fieldName} is missing`);
+        return false;
+      }
+  
+      const valid = validateFieldset(inputIds, errorElement, fieldName, rules);
+      return valid;
+    }
+  
+    // Validate form 1
+    function validateForm1() {
+      let isValid = true;
+      let firstInvalidElement = null;
+  
+      // Validate Done By
+      const doneBy1Input = document.getElementById('done_by_1');
+      const doneBy1Error = document.getElementById('done_by_1_error')
+      isValid = logValidate(doneBy1Input, doneBy1Error, 'Testing', ['required', 'integer', 'length6', 'allowedValues']) && isValid;
+  
+      // Validate Lot ID
+      const lotIdInput = document.getElementById('lot_id');
+      const lotIdError = document.getElementById('lot_id_error');
+      lotIdIsValid = logValidate(lotIdInput, lotIdError, 'Lot ID', ['required', 'integer', 'length8']);
+  
+      if (lotIdIsValid) {
+        // Validate Full Lot ID
+        const splitIdInput = document.getElementById('split_id');
+        const lotIdSuffixInput = document.getElementById('lot_id_suffix');
+        isValid = validateFullLotId(splitIdInput, lotIdInput, lotIdSuffixInput, lotIdError,form1DataFullLotIds) && isValid;
+      }
+  
+      // Validate Tool Number
+      const toolNumberInput = document.getElementById('tool_number');
+      const toolNumberError = document.getElementById('tool_number_error');
+      isValid = logValidate(toolNumberInput, toolNumberError, 'Tool Number', ['required', 'pattern_S5A']) && isValid;
+  
+      // Validate Kevin Probe Test
+      const kevinProbeTestInputs = document.querySelectorAll('input[name="kevin_probe_test"]');
+      const kevinProbeTestError = document.getElementById('kevin_probe_test_error');
+      isValid = logValidate(kevinProbeTestInputs[0], kevinProbeTestError, 'Kevin Probe Test', ['required']) && isValid;
+  
+      // Validate For 4Wire when 'Yes' is selected
+      const kevinProbeTestYesInput = document.getElementById('kevin_probe_test_yes');
+      if (kevinProbeTestYesInput && kevinProbeTestYesInput.checked) {
+        const for4WireInput = document.getElementById('for_4wire_input');
+        const for4WireError = document.getElementById('for_4wire_input_error');
+        if (for4WireInput) {
+          isValid = logValidate(for4WireInput, for4WireError, 'For 4Wire', ['required']) && isValid;
+        }
+      }
+  
+      // Validate Date Code
+      const dateCodeInputs = document.querySelectorAll('input[name="date_code"]');
+      const dateCodeError = document.getElementById('date_code_error');
+      isValid = logValidate(dateCodeInputs[0], dateCodeError, 'Date Code', ['required']) && isValid;
+  
+      // Validate Date Code when 'Yes' is selected
+      const dateCodeYesInput = document.getElementById('date_code_yes');
+      if(dateCodeYesInput && dateCodeYesInput.checked) {
+        const dateCodeInput = document.getElementById('date_code_input');
+        const dateCodeInputError = document.getElementById('date_code_input_error');
+        if (dateCodeInput) {
+          isValid = logValidate(dateCodeInput, dateCodeInputError, 'Date Code', ['required', 'integer', 'length4']) && isValid;
+        }
+      }
+  
+      // Validate Job Type
+      const jobTypeInput = document.getElementById('job_type');
+      const jobTypeError = document.getElementById('job_type_error');
+      isValid = logValidate(jobTypeInput, jobTypeError, 'Job Type', ['required']) && isValid;
+  
+      // Validate Machine
+      const machineInput = document.getElementById('machine');
+      const machineError = document.getElementById('machine_error');
+      isValid = logValidate(machineInput, machineError, 'Machine', ['required']) && isValid;
+  
+      // Validate X-Cut Allowed
+      const xcutAllowedInput = document.getElementById('xcut_allowed');
+      const xcutAllowedError = document.getElementById('xcut_allowed_error');
+      isValid = logValidate(xcutAllowedInput, xcutAllowedError, 'X-Cut Allowed', ['required']) && isValid;
+  
+      // Validate IPC Class
+      const ipcClassInputs = document.querySelectorAll('input[name="ipc_class"]');
+      const ipcClassError = document.getElementById('ipc_class_error');
+      isValid = logValidate(ipcClassInputs[0], ipcClassError, 'IPC Class', ['required']) && isValid;
+  
+      // Validate Mass Lam
+      const massLamInputs = document.querySelectorAll('input[name="mass_lam"]');
+      const massLamError = document.getElementById('mass_lam_error');
+      isValid = logValidate(massLamInputs[0], massLamError, 'Mass Lam', ['required']) && isValid;
+  
+      // Validate Resistive
+      const resistiveInputs = document.querySelectorAll('input[name="resistive"]');
+      const resistiveError = document.getElementById('resistive_error');
+      isValid = logValidate(resistiveInputs[0], resistiveError, 'Resistive', ['required']) && isValid;
+  
+      // Validate Continuity
+      const continuityInput = document.getElementById('continuity');
+      const continuityError = document.getElementById('continuity_error');
+      isValid = logValidate(continuityInput, continuityError, 'Continuity', ['required', 'integer', 'range5to300']) && isValid;
+  
+      // Validate Test Voltage
+      const testVoltageInput = document.getElementById('test_voltage');
+      const testVoltageError = document.getElementById('test_voltage_error');
+      isValid = logValidate(testVoltageInput, testVoltageError, 'Test Voltage', ['required', 'integer', 'range100to300']) && isValid;
+  
+      // Validate Isolation
+      const isolationInput = document.getElementById('isolation');
+      const isolationError = document.getElementById('isolation_error');
+      isValid = logValidate(isolationInput, isolationError, 'Isolation', ['required', 'integer', 'range10to20']) && isValid;
+  
+      // Validate Adjacency Used
+      const adjacencyUsedInputs = document.querySelectorAll('input[name="adjacency_used"]');
+      const adjacencyUsedError = document.getElementById('adjacency_used_error');
+      isValid = logValidate(adjacencyUsedInputs[0], adjacencyUsedError, 'Adjacency Used', ['required']) && isValid;
+  
+      // Validate Mfg Qty
+      const mfgQtyInput = document.getElementById('mfg_qty');
+      const mfgQtyError = document.getElementById('mfg_qty_error');
+      isValid = logValidate(mfgQtyInput, mfgQtyError, 'Mfg Qty', ['required', 'integer', 'nonZero']) && isValid;
+  
+      // Validate Tested Qty
+      const testedQtyInput = document.getElementById('tested_qty');
+      const testedQtyError = document.getElementById('tested_qty_error');
+      isValid = logValidate(testedQtyInput, testedQtyError, 'Tested Qty', ['required', 'integer', 'nonZero', 'lessThanOrEqual:mfg_qty']) && isValid;
+  
+      // Validate 1st Passed Qty
+      const firstPassedQtyInput = document.getElementById('first_passed_qty');
+      const firstPassedQtyError = document.getElementById('first_passed_qty_error');
+      isValid = logValidate(firstPassedQtyInput, firstPassedQtyError, '1st Passed Qty', ['required', 'integer', 'nonZero', 'lessThanOrEqual:tested_qty']) && isValid;
+  
+      // Validate Open
+      const openInput = document.getElementById('open');
+      const openError = document.getElementById('open_error');
+      isValid = logValidate(openInput, openError, 'Open', ['required', 'integer']) && isValid;
+  
+      // Validate Short
+      const shortInput = document.getElementById('short');
+      const shortError = document.getElementById('short_error');
+      isValid = logValidate(shortInput, shortError, 'Short', ['required', 'integer']) && isValid;
+  
+      // Validate SDP
+      const sdpInput = document.getElementById('SDP');
+      const sdpError = document.getElementById('SDP_error');
+      isValid = logValidate(sdpInput, sdpError, 'SDP', ['required', 'integer']) && isValid;
+  
+      // Validate Passed Qty Details calculations
+      isValid = validateTotalQtyFallout() && isValid;
+  
+      // Validate Open & Short
+      const openValue = parseInt(openInput.value, 10);
+      const shortValue = parseInt(shortInput.value, 10);
+  
+      if (openValue === 0 && shortValue === 0) {
+        showModal('validationModal');
+        return false;
+      }
+  
+  
+      return isValid;
+    }
+  
+    // Validate form 
+    function validateForm() {
+      let isValid = true;
+      let firstInvalidElement = null;
+  
+      // Validate Done By - Testing
+      const doneBy1Input = document.getElementById('done_by_1');
+      const doneBy1Error = document.getElementById('done_by_1_error')
+      isValid = logValidate(doneBy1Input, doneBy1Error, 'Testing', ['required', 'integer', 'length6', 'allowedValues']) && isValid;
+  
+      // Validate Lot ID
+      const lotIdInput = document.getElementById('lot_id');
+      const lotIdError = document.getElementById('lot_id_error');
+      lotIdIsValid = logValidate(lotIdInput, lotIdError, 'Lot ID', ['required', 'integer', 'length8']);
+  
+      if (lotIdIsValid) {
+        // Validate Full Lot ID
+        const splitIdInput = document.getElementById('split_id');
+        const lotIdSuffixInput = document.getElementById('lot_id_suffix');
+        isValid = validateFullLotId(splitIdInput, lotIdInput, lotIdSuffixInput, lotIdError,mdv2FullLotIds) && isValid;
+      }
+  
+      // Validate Tool Number
+      const toolNumberInput = document.getElementById('tool_number');
+      const toolNumberError = document.getElementById('tool_number_error');
+      isValid = logValidate(toolNumberInput, toolNumberError, 'Tool Number', ['required', 'pattern_S5A']) && isValid;
+  
+      // Validate Kevin Probe Test
+      const kevinProbeTestInputs = document.querySelectorAll('input[name="kevin_probe_test"]');
+      const kevinProbeTestError = document.getElementById('kevin_probe_test_error');
+      isValid = logValidate(kevinProbeTestInputs[0], kevinProbeTestError, 'Kevin Probe Test', ['required']) && isValid;
+  
+      // Validate For 4Wire when 'Yes' is selected
+      const kevinProbeTestYesInput = document.getElementById('kevin_probe_test_yes');
+      if (kevinProbeTestYesInput && kevinProbeTestYesInput.checked) {
+        const for4WireInput = document.getElementById('for_4wire_input');
+        const for4WireError = document.getElementById('for_4wire_input_error');
+        if (for4WireInput) {
+          isValid = logValidate(for4WireInput, for4WireError, 'For 4Wire', ['required']) && isValid;
+        }
+      }
+  
+      // Validate Date Code
+      const dateCodeInputs = document.querySelectorAll('input[name="date_code"]');
+      const dateCodeError = document.getElementById('date_code_error');
+      isValid = logValidate(dateCodeInputs[0], dateCodeError, 'Date Code', ['required']) && isValid;
+  
+      // Validate Date Code when 'Yes' is selected
+      const dateCodeYesInput = document.getElementById('date_code_yes');
+      if(dateCodeYesInput && dateCodeYesInput.checked) {
+        const dateCodeInput = document.getElementById('date_code_input');
+        const dateCodeInputError = document.getElementById('date_code_input_error');
+        if (dateCodeInput) {
+          isValid = logValidate(dateCodeInput, dateCodeInputError, 'Date Code', ['required', 'integer', 'length4']) && isValid;
+        }
+      }
+  
+      // Validate Job Type
+      const jobTypeInput = document.getElementById('job_type');
+      const jobTypeError = document.getElementById('job_type_error');
+      isValid = logValidate(jobTypeInput, jobTypeError, 'Job Type', ['required']) && isValid;
+  
+      // Validate Machine
+      const machineInput = document.getElementById('machine');
+      const machineError = document.getElementById('machine_error');
+      isValid = logValidate(machineInput, machineError, 'Machine', ['required']) && isValid;
+  
+      // Validate X-Cut Allowed
+      const xcutAllowedInput = document.getElementById('xcut_allowed');
+      const xcutAllowedError = document.getElementById('xcut_allowed_error');
+      isValid = logValidate(xcutAllowedInput, xcutAllowedError, 'X-Cut Allowed', ['required']) && isValid;
+  
+      // Validate IPC Class
+      const ipcClassInputs = document.querySelectorAll('input[name="ipc_class"]');
+      const ipcClassError = document.getElementById('ipc_class_error');
+      isValid = logValidate(ipcClassInputs[0], ipcClassError, 'IPC Class', ['required']) && isValid;
+  
+      // Validate Mass Lam
+      const massLamInputs = document.querySelectorAll('input[name="mass_lam"]');
+      const massLamError = document.getElementById('mass_lam_error');
+      isValid = logValidate(massLamInputs[0], massLamError, 'Mass Lam', ['required']) && isValid;
+  
+      // Validate Resistive
+      const resistiveInputs = document.querySelectorAll('input[name="resistive"]');
+      const resistiveError = document.getElementById('resistive_error');
+      isValid = logValidate(resistiveInputs[0], resistiveError, 'Resistive', ['required']) && isValid;
+  
+      // Validate Continuity
+      const continuityInput = document.getElementById('continuity');
+      const continuityError = document.getElementById('continuity_error');
+      isValid = logValidate(continuityInput, continuityError, 'Continuity', ['required', 'integer', 'range5to300']) && isValid;
+  
+      // Validate Test Voltage
+      const testVoltageInput = document.getElementById('test_voltage');
+      const testVoltageError = document.getElementById('test_voltage_error');
+      isValid = logValidate(testVoltageInput, testVoltageError, 'Test Voltage', ['required', 'integer', 'range100to300']) && isValid;
+  
+      // Validate Isolation
+      const isolationInput = document.getElementById('isolation');
+      const isolationError = document.getElementById('isolation_error');
+      isValid = logValidate(isolationInput, isolationError, 'Isolation', ['required', 'integer', 'range10to20']) && isValid;
+  
+      // Validate Adjacency Used
+      const adjacencyUsedInputs = document.querySelectorAll('input[name="adjacency_used"]');
+      const adjacencyUsedError = document.getElementById('adjacency_used_error');
+      isValid = logValidate(adjacencyUsedInputs[0], adjacencyUsedError, 'Adjacency Used', ['required']) && isValid;
+  
+      // Validate Mfg Qty
+      const mfgQtyInput = document.getElementById('mfg_qty');
+      const mfgQtyError = document.getElementById('mfg_qty_error');
+      isValid = logValidate(mfgQtyInput, mfgQtyError, 'Mfg Qty', ['required', 'integer', 'nonZero']) && isValid;
+  
+      // Validate Tested Qty
+      const testedQtyInput = document.getElementById('tested_qty');
+      const testedQtyError = document.getElementById('tested_qty_error');
+      isValid = logValidate(testedQtyInput, testedQtyError, 'Tested Qty', ['required', 'integer', 'nonZero', 'lessThanOrEqual:mfg_qty']) && isValid;
+  
+      // Validate 1st Passed Qty
+      const firstPassedQtyInput = document.getElementById('first_passed_qty');
+      const firstPassedQtyError = document.getElementById('first_passed_qty_error');
+      isValid = logValidate(firstPassedQtyInput, firstPassedQtyError, '1st Passed Qty', ['required', 'integer', 'nonZero', 'lessThanOrEqual:tested_qty']) && isValid;
+  
+      // Validate Open
+      const openInput = document.getElementById('open');
+      const openError = document.getElementById('open_error');
+      isValid = logValidate(openInput, openError, 'Open', ['required', 'integer']) && isValid;
+  
+      // Validate Short
+      const shortInput = document.getElementById('short');
+      const shortError = document.getElementById('short_error');
+      isValid = logValidate(shortInput, shortError, 'Short', ['required', 'integer']) && isValid;
+  
+      // Validate SDP
+      const sdpInput = document.getElementById('SDP');
+      const sdpError = document.getElementById('SDP_error');
+      isValid = logValidate(sdpInput, sdpError, 'SDP', ['required', 'integer']) && isValid;
+  
+      // Validate Passed Qty Details calculations
+      isValid = validateTotalQtyFallout() && isValid;
+  
+      // Validate tested qty = final passed qty
+      const finalPassedQtyInput = document.getElementById('final_passed_qty');
+      const testedQtyValue = parseInt(testedQtyInput.value) || null;
+      const finalPassedQtyValue = parseInt(finalPassedQtyInput.value) || null;
+      // Check if Final Passed Qty is equal to Tested Qty
+      if (testedQtyValue !== null && finalPassedQtyValue !== null) {
+        const areFinalAndTestedEqual = finalPassedQtyValue === testedQtyValue;
+  
+        // If Open is filled
+        if (openInput.value > 0 && !areFinalAndTestedEqual) {
+          const openCircuitDropdown = document.getElementById('open_circuit_defect');
+          const openCircuitDropdownError = document.getElementById('open_circuit_dropdown_error');
+          isValid = logValidate(openCircuitDropdown, openCircuitDropdownError, 'Open Circuit Reason', ['required']) && isValid;
+  
+          // Iterate over selected values and validate each
+          if(openSelectedValues.length > 0) {
+            openSelectedValues.forEach(value => {
+              switch (value) {
+                // Innerlayer Open
+                case 'Innerlayer Open':
+                  const innerlayerOpenInput = document.getElementById('080_il_strip');
+                  const innerlayeOpenError = document.getElementById('innerlayer_open_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledInnerlayerOpen = logValidate(innerlayerOpenInput, innerlayeOpenError, 'Innerlayer Open', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledInnerlayerOpen) {
+                    const ilStrip080Input = document.getElementById('080_il_strip');
+                    if (ilStrip080Input) {
+                      const ilStrip080Error = document.getElementById('080_il_strip_error');
+                      if (ilStrip080Input.value) {
+                        isValid = logValidate(ilStrip080Input, ilStrip080Error, 'Qty Reject - 080 IL_STRIP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Void Hole
+                case 'Void Hole':
+                  const voidHoleInput = document.getElementById('chema_180_ol_cm_dm_o');
+                  const voidHoleError = document.getElementById('void_hole_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledVoidHole = logValidate(voidHoleInput, voidHoleError, 'Void Hole', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledVoidHole) {
+                    const chema180OlCmDmOInput = document.getElementById('chema_180_ol_cm_dm_o');
+                    if (chema180OlCmDmOInput) {
+                      const chema180OlCmDmOError = document.getElementById('chema_180_ol_cm_dm_o_error');
+                      if (chema180OlCmDmOInput.value) {
+                        isValid = logValidate(chema180OlCmDmOInput, chema180OlCmDmOError, 'Qty Reject - CHEM A 180 OL_CM_DM_O', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Partial Feature (Blind Via Void)
+                case 'Partial Feature (Blind Via Void)':
+                  const partialFeatureInput = document.getElementById('chema_477_ol_cm_dm_o');
+                  const partialFeatureError = document.getElementById('partial_feature_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledPartialFeature = logValidate(partialFeatureInput, partialFeatureError, 'Partial Feature (Blind Via Void)', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledPartialFeature) {
+                    const chema477OlCmDmOInput = document.getElementById('chema_477_ol_cm_dm_o');
+                    if (chema477OlCmDmOInput) {
+                      const chema477OlCmDmOError = document.getElementById('chema_477_ol_cm_dm_o_error');
+                      if (chema477OlCmDmOInput.value) {
+                        isValid = logValidate(chema477OlCmDmOInput, chema477OlCmDmOError, 'Qty Reject - Chem A 477 OL_CM_DM_O', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Lifted Feature (Circuit Peel-Off)
+                case 'Lifted Feature (Circuit Peel-Off)':
+                  const liftedFeatureInputs = ['473_ol_lpsm_cure', '473_ol_cm_osp', '473_ol_cm_strp'];
+                  const liftedFeatureError = document.getElementById('lifted_feature_error');
+          
+                  // Check if any field is filled
+                  const isAnyFieldFilledLiftedFeature = logValidateFieldset(liftedFeatureInputs, liftedFeatureError, 'Lifted Feature (Circuit Peel Off)', ['anyFieldFilled']);
+                    
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledLiftedFeature) {
+                    const olLpsmCure473Input = document.getElementById('473_ol_lpsm_cure');
+                    if (olLpsmCure473Input) {
+                      const olLpsmCure473Error = document.getElementById('473_ol_lpsm_cure_error');
+                      if (olLpsmCure473Input.value) {
+                        isValid = logValidate(olLpsmCure473Input, olLpsmCure473Error, 'Qty Reject - 473 OL_LPSM_CURE', ['integer', 'nonZero']) && isValid;
+                      }
+                    } 
+                    const olCmOsp473Input = document.getElementById('473_ol_cm_osp');
+                    if (olCmOsp473Input) {
+                      const olCmOsp473Error = document.getElementById('473_ol_cm_osp_error');
+                      if (olCmOsp473Input.value) {
+                        isValid = logValidate(olCmOsp473Input, olCmOsp473Error, 'Qty Reject - 473 OL_CM_OSP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const olCmStrp473Input = document.getElementById('473_ol_cm_strp');
+                    if (olCmStrp473Input) {
+                      const olCmStrp473Error = document.getElementById('473_ol_cm_strp_error');
+                      if (olCmStrp473Input.value) {
+                        isValid = logValidate(olCmStrp473Input, olCmStrp473Error, 'Qty Reject - 473 OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  } 
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Missing Hole
+                case 'Missing Hole':
+                  const missingHoleInput = document.getElementById('133_ol_drl');
+                  const missingHoleError = document.getElementById('missing_hole_error');
+  
+                  // Check if any field filled
+                  const isAnyFieldFilledMissingHole = logValidate(missingHoleInput, missingHoleError, 'Missing Hole', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledMissingHole) {
+                    const olDrl133Input = document.getElementById('133_ol_drl');
+                    if (olDrl133Input) {
+                      const olDrl133Error = document.getElementById('133_ol_drl_error');
+                      if (olDrl133Input.value) {
+                        isValid = logValidate(olDrl133Input, olDrl133Error, 'Qty Reject - 133 OL_DRL', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Outerlayer Open
+                case 'Outerlayer Open':
+                  const outerlayerOpenInputs = ['outerlayer_open_repair', 'photoprint_080_ol_pp_dev'];
+                  const outerlayerOpenError = document.getElementById('outerlayer_open_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledOuterlayerOpen = logValidateFieldset(outerlayerOpenInputs, outerlayerOpenError, 'Outerlayer Open', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledOuterlayerOpen) {
+                    const outerlayerOpenRepairInput = document.getElementById('outerlayer_open_repair');
+                    if (outerlayerOpenRepairInput) {
+                      const outerlayerOpenRepairError = document.getElementById('outerlayer_open_repair_error');
+                      if (outerlayerOpenRepairInput.value) {
+                        isValid = logValidate(outerlayerOpenRepairInput, outerlayerOpenRepairError, 'Qty Repair - Outerlayer Open', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const photoprint080OlPpDevInput = document.getElementById('photoprint_080_ol_pp_dev');
+                    if (photoprint080OlPpDevInput) {
+                      const photoprint080OlPpDevError = document.getElementById('photoprint_080_ol_pp_dev_error');
+                      if (photoprint080OlPpDevInput.value) {
+                        isValid = logValidate(photoprint080OlPpDevInput, photoprint080OlPpDevError, 'Qty Reject - Photoprint 080 OL_PP_DEV', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Mask on Pad/Finger
+                case 'Mask on Pad/Finger':
+                  const maskOnPadFingerInputs = ['mask_on_pad_finger_repair', '205_ol_sm_cure'];
+                  const maskOnPadFingerError = document.getElementById('mask_on_pad_finger_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledMaskOnPadFinger = logValidateFieldset(maskOnPadFingerInputs, maskOnPadFingerError, 'Mask on Pad/Finger', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledMaskOnPadFinger) {
+                    const maskOnPadFingerRepairInput = document.getElementById('mask_on_pad_finger_repair');
+                    if (maskOnPadFingerRepairInput) {
+                      const maskOnPadFingerRepairError = document.getElementById('mask_on_pad_finger_repair_error');
+                      if (maskOnPadFingerRepairInput.value) {
+                        isValid = logValidate(maskOnPadFingerRepairInput, maskOnPadFingerRepairError, 'Qty Repair - Mask on Pad/Finger', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const olSmCure205Input = document.getElementById('205_ol_sm_cure');
+                    if (olSmCure205Input) {
+                      const olSmCure205Error = document.getElementById('205_ol_sm_cure_error');
+                      if (olSmCure205Input.value) {
+                        isValid = logValidate(olSmCure205Input, olSmCure205Error, 'Qty Reject - 205 OL_SM_CURE', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Plating Nodule (Particle in Hole)
+                case 'Plating Nodule (Particle in Hole)':
+                  const platingNoduleInputs = ['plating_nodule_repair', '178_ol_cm_strp'];
+                  const platingNoduleError = document.getElementById('plating_nodule_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledPlatingNodule = logValidateFieldset(platingNoduleInputs, platingNoduleError, 'Plating Nodule (Particle in Hole)', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledPlatingNodule) {
+                    const platingNoduleRepairInput = document.getElementById('plating_nodule_repair');
+                    if (platingNoduleRepairInput) {
+                      const platingNoduleRepairError = document.getElementById('plating_nodule_repair_error');
+                      if (platingNoduleRepairInput.value) {
+                        isValid = logValidate(platingNoduleRepairInput, platingNoduleRepairError, 'Qty Repair - Plating Nodule (Particle in Hole)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const olCmStrp178Input = document.getElementById('178_ol_cm_strp');
+                    if (olCmStrp178Input) {
+                      const olCmStrp178Error = document.getElementById('178_ol_cm_strp_error');
+                      if (olCmStrp178Input.value) {
+                        isValid = logValidate(olCmStrp178Input, olCmStrp178Error, 'Qty Reject - 178 OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Legend on Pad/Hole
+                case 'Legend on Pad/Hole':
+                  const legendOnPadHoleInputs = ['legend_on_pad_hole_repair', '233_ol_lpsm_cure'];
+                  const legendOnPadHoleError = document.getElementById('legend_on_pad_hole_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledLegendOnPadHole = logValidateFieldset(legendOnPadHoleInputs, legendOnPadHoleError, 'Legend on Pad/Hole', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledLegendOnPadHole) {
+                    const legendOnPadHoleRepairInput = document.getElementById('legend_on_pad_hole_repair');
+                    if (legendOnPadHoleRepairInput) {
+                      const legendOnPadHoleRepairError = document.getElementById('legend_on_pad_hole_repair_error');
+                      if (legendOnPadHoleRepairInput.value) {
+                        isValid = logValidate(legendOnPadHoleRepairInput, legendOnPadHoleRepairError, 'Qty Repair - Legend on Pad/Hole', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const olLpsmCure233Input = document.getElementById('233_ol_lpsm_cure');
+                    if (olLpsmCure233Input) {
+                      const olLpsmCure233Error = document.getElementById('233_ol_lpsm_cure_error');
+                      if (olLpsmCure233Input.value) {
+                        isValid = logValidate(olLpsmCure233Input, olLpsmCure233Error, 'Qty Reject - 233 OL_LPSM_CURE', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Others Open
+                case 'Others Open':
+                  const othersOpenInputs = ['others_open_repair', 'others_open_reject'];
+                  const othersOpenError = document.getElementById('others_open_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledOthersOpen = logValidateFieldset(othersOpenInputs, othersOpenError, 'Others Open', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledOthersOpen) {
+                    const othersOpenRepairInput = document.getElementById('others_open_repair');
+                    if (othersOpenRepairInput) {
+                      const othersOpenRepairError = document.getElementById('others_open_repair_error');
+                      if (othersOpenRepairInput.value) {
+                        isValid = logValidate(othersOpenRepairInput, othersOpenRepairError, 'Qty Repair - Others Open', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const othersOpenRejectInput = document.getElementById('others_open_reject');
+                    if (othersOpenRejectInput) {
+                      const othersOpenRejectError = document.getElementById('others_open_reject_error');
+                      if (othersOpenRejectInput.value) {
+                        isValid = logValidate(othersOpenRejectInput, othersOpenRejectError, 'Qty Reject - Others Open', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // False o/c
+                case 'False o/c':
+                  const falseOcInput = document.getElementById('false_oc_repair');
+                  const falseOcError = document.getElementById('false_oc_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledFalseoc = logValidate(falseOcInput, falseOcError, 'False o/c', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledFalseoc) {
+                    const falseOcRepairInput = document.getElementById('false_oc_repair');
+                    if (falseOcRepairInput) {
+                      const falseOcRepairError = document.getElementById('false_oc_repair_error');
+                      if (falseOcRepairInput.value) {
+                        isValid = logValidate(falseOcRepairInput, falseOcRepairError, 'Qty Repair -False o/c', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+              }
+            });
+          }
+        }
+  
+        // If Short is filled
+        if (shortInput.value > 0 && !areFinalAndTestedEqual) {
+          // Validate Short Circuit Dropdown
+          const shortCircuitDropdown = document.getElementById('short_circuit_defect');
+          const shortCircuitDropdownError = document.getElementById('short_circuit_dropdown_error');
+          isValid = logValidate(shortCircuitDropdown, shortCircuitDropdownError, 'Short Circuit Reason', ['required']) && isValid;
+  
+          // Iterate over selected values and validate each
+          if(shortSelectedValues.length > 0) {
+            shortSelectedValues.forEach(value => {
+              switch (value) {
+  
+                // Short (Plating Under Resist) (Dry Film Flake-Off)
+                case 'Short (Plating Under Resist) (Dry Film Flake-Off)':
+                  const shortInputs = ['short_repair', 'photoprint_083_ol_pp_dev'];
+                  const shortPlatingError = document.getElementById('short_plating_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledShort = logValidateFieldset(shortInputs, shortPlatingError, 'Short (Plating Under Resist) (Dry Film Flake-Off)', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledShort) {
+                    const shortRepairInput = document.getElementById('short_repair');
+                    if (shortRepairInput) {
+                      const shortRepairError = document.getElementById('short_repair_error');
+                      if (shortRepairInput.value) {
+                        isValid = logValidate(shortRepairInput, shortRepairError, 'Qty Repair - Short (Plating Under Resist) (Dry Film Flake-Off)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const photoprint083OlPpDevInput = document.getElementById('photoprint_083_ol_pp_dev');
+                    if (photoprint083OlPpDevInput) {
+                      const photoprint083OlPpDevError = document.getElementById('photoprint_083_ol_pp_dev_error');
+                      if (photoprint083OlPpDevInput.value) {
+                        isValid = logValidate(photoprint083OlPpDevInput, photoprint083OlPpDevError, 'Qty Reject - Photoprint 083 OL_PP_DEV', ['integer', 'nonZero']) && isValid;
+                      }
+                    } 
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Scratches
+                case 'Scratches':
+                  const scratchesInputs = ['scratches_repair', 'photoprint_483_ol_pp_dev', 'chemb_483_ol_cm_strp', 'chemc_483_ol_cm_osp'];
+                  const scratchesError = document.getElementById('scratches_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledScratches = logValidateFieldset(scratchesInputs, scratchesError, 'Scratches', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledScratches) {
+                    const scratchesRepairInput = document.getElementById('scratches_repair');
+                    if (scratchesRepairInput) {
+                      const scratchesRepairError = document.getElementById('scratches_repair_error');
+                      if (scratchesRepairInput.value) {
+                        isValid = logValidate(scratchesRepairInput, scratchesRepairError, 'Qty Repair - Scratches', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const photoprint483OlPpDevInput = document.getElementById('photoprint_483_ol_pp_dev');
+                    if (photoprint483OlPpDevInput) {
+                      const photoprint483OlPpDevError = document.getElementById('photoprint_483_ol_pp_dev_error');
+                      if (photoprint483OlPpDevInput.value) {
+                        isValid = logValidate(photoprint483OlPpDevInput, photoprint483OlPpDevError, 'Qty Reject - Photoprint 483 OL_PP_DEV', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemb483OlCmStrpInput = document.getElementById('chemb_483_ol_cm_strp');
+                    if (chemb483OlCmStrpInput) {
+                      const chemb483OlCmStrpError = document.getElementById('chemb_483_ol_cm_strp_error');
+                      if (chemb483OlCmStrpInput.value) {
+                        isValid = logValidate(chemb483OlCmStrpInput, chemb483OlCmStrpError, 'Qty Reject - Chem B 483 OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemc483OlCmOspInput = document.getElementById('chemc_483_ol_cm_osp');
+                    if (chemc483OlCmOspInput) {
+                      const chemc483OlCmOspError = document.getElementById('chemc_483_ol_cm_osp_error');
+                      if (chemc483OlCmOspInput.value) {
+                        isValid = logValidate(chemc483OlCmOspInput, chemc483OlCmOspError, 'Qty Reject - Chem C 483 OL_CM_OSP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+                
+                // Cu Residue
+                case 'Cu Residue':
+                  const cuResidueInputs = ['cu_residue_repair', 'chemb_172_ol_cm_strp'];
+                  const cuResidueError = document.getElementById('cu_residue_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledCuResidue = logValidateFieldset(cuResidueInputs, cuResidueError, 'Cu Residue', ['anyFieldFilled']);
+                  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledCuResidue) {
+                    const cuResidueRepairInput = document.getElementById('cu_residue_repair');
+                    if (cuResidueRepairInput) {
+                      const cuResidueRepairError = document.getElementById('cu_residue_repair_error');
+                      if (cuResidueRepairInput.value) {
+                        isValid = logValidate(cuResidueRepairInput, cuResidueRepairError, 'Qty Repair - Cu Residue', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemb172OlCmStrpInput = document.getElementById('chemb_172_ol_cm_strp');
+                    if (chemb172OlCmStrpInput) {
+                      const chemb172OlCmStrpError = document.getElementById('chemb_172_ol_cm_strp_error');
+                      if (chemb172OlCmStrpInput.value) {
+                        isValid = logValidate(chemb172OlCmStrpInput, chemb172OlCmStrpError, 'Qty Reject - Chem B 172 OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Under-etch
+                case 'Under-etch':
+                  const underetchInputs = ['under_etch_repair', 'chemb_076_ol_cm_strp'];
+                  const underetchError = document.getElementById('under_etch_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledUnderetch = logValidateFieldset(underetchInputs, underetchError, 'Under-etch', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledUnderetch) {
+                    const underetchRepairInput = document.getElementById('under_etch_repair');
+                    if (underetchRepairInput) {
+                      const underetchRepairError = document.getElementById('under_etch_repair_error');
+                      if (underetchRepairInput.value) {
+                        isValid = logValidate(underetchRepairInput, underetchRepairError, 'Qty Repair - Under-etch', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemb076OlCmStrpInput = document.getElementById('chemb_076_ol_cm_strp');
+                    if (chemb076OlCmStrpInput) {
+                      const chemb076OlCmStrpError = document.getElementById('chemb_076_ol_cm_strp_error');
+                      if (chemb076OlCmStrpInput.value) {
+                        isValid = logValidate(chemb076OlCmStrpInput, chemb076OlCmStrpError, 'Qty Reject - Chem B 076 OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Innerlayer Short
+                case 'Innerlayer Short':
+                  const innerlayerShortInput = document.getElementById('083_il_strip');
+                  const innerlayerShortError = document.getElementById('innerlayer_short_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledInnerlayerShort = logValidate(innerlayerShortInput, innerlayerShortError, 'Innerlayer Short', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  const ilStrip083Input = document.getElementById('083_il_strip');
+                  if (ilStrip083Input) {
+                    const ilStrip083Error = document.getElementById('083_il_strip_error');
+                    if (ilStrip083Input.value) {
+                      isValid = logValidate(ilStrip083Input, ilStrip083Error, 'Qty Reject - 083 IL_STRIP', ['integer', 'nonZero']) && isValid;
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Mis-registration
+                case 'Mis-registration':
+                  const misregistrationInputs = ['mis_registration_repair', '471_ol_lam', '469_ol_lam'];
+                  const misregistrationError = document.getElementById('mis_registration_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledMisregistration = logValidateFieldset(misregistrationInputs, misregistrationError, 'Mis-registration', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledMisregistration) {
+                    const misregistrationRepairInput = document.getElementById('mis_registration_repair');
+                    if (misregistrationRepairInput) {
+                      const misregistrationRepairError = document.getElementById('mis_registration_repair_error');
+                      if (misregistrationRepairInput.value) {
+                        isValid = logValidate(misregistrationRepairInput, misregistrationRepairError, 'Qty Repair', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const olLam471Input = document.getElementById('471_ol_lam');
+                    if (olLam471Input) {
+                      const olLam471Error = document.getElementById('471_ol_lam_error');
+                      if (olLam471Input.value) {
+                        isValid = logValidate(olLam471Input, olLam471Error, 'Qty Reject - 471 OL_LAM', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const olLam469Input = document.getElementById('469_ol_lam');
+                    if (olLam469Input) {
+                      const olLam469Error = document.getElementById('469_ol_lam_error');
+                      if (olLam469Input.value) {
+                        isValid = logValidate(olLam469Input, olLam469Error, 'Qty Reject - 469 OL_LAM', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Hole Shifted
+                case 'Hole Shifted':
+                  const holeShiftedInput = document.getElementById('132_ol_drl');
+                  const holeShiftedError = document.getElementById('hole_shifted_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledHoleShifted = logValidate(holeShiftedInput, holeShiftedError, 'Hole Shifted', ['required']);
+                  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledHoleShifted) {
+                    const olDrl132Input = document.getElementById('132_ol_drl');
+                    if (olDrl132Input) {
+                      const oldrl132Error = document.getElementById('132_ol_drl_error');
+                      if (olDrl132Input.value) {
+                        isValid = logValidate(olDrl132Input, oldrl132Error, 'Qty Reject - 132 OL_DRL', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Short (Mirco-short)
+                case 'Short (Mirco-short)':
+                  const microShortInputs = ['micro_short_repair', 'chemb_083_ol_cm_strp', 'lpsm_083_ol_sm_cure'];
+                  const mircoshortError = document.getElementById('micro_short_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledMicroShort = logValidateFieldset(microShortInputs, mircoshortError, 'Short (Mirco-short)', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledMicroShort) {
+                    const microShortRepairInput = document.getElementById('micro_short_repair');
+                    if (microShortRepairInput) {
+                      const microShortRepairError = document.getElementById('micro_short_repair_error');
+                      if (microShortRepairInput.value) {
+                        isValid = logValidate(microShortRepairInput, microShortRepairError, 'Qty Repair - Short (Mirco-short)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemb083OlCmStrpInput = document.getElementById('chemb_083_ol_cm_strp');
+                    if (chemb083OlCmStrpInput) {
+                      const chemb083OlCmStrpError = document.getElementById('chemb_083_ol_cm_strp_error');
+                      if (chemb083OlCmStrpInput.value) {
+                        isValid = logValidate(chemb083OlCmStrpInput, chemb083OlCmStrpError, 'Qty Reject - Chem B 083 OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const lpsm083OlSmCureInput = document.getElementById('lpsm_083_ol_sm_cure');
+                    if (lpsm083OlSmCureInput) {
+                      const lpsm083OlSmCureError = document.getElementById('lpsm_083_ol_sm_cure_error');
+                      if (lpsm083OlSmCureInput.value) {
+                        isValid = logValidate(lpsm083OlSmCureInput, lpsm083OlSmCureError, 'Qty Reject - LPSM 083 OL_SM_CURE', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Incomplete Solder Strip (Solder Short)
+                case 'Incomplete Solder Strip (Solder Short)':
+                  const incompleteSolderStripInputs = ['incomplete_solder_strip_repair', 'chemc_256_ol_cm_osp'];
+                  const incompleteSolderStripError = document.getElementById('incomplete_solder_strip_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledIncompleteSolderStrip = logValidateFieldset(incompleteSolderStripInputs, incompleteSolderStripError, 'Incomplete Solder Strip (Solder Short)', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledIncompleteSolderStrip) {
+                    const incompleteSolderStripRepairInput = document.getElementById('incomplete_solder_strip_repair');
+                    if (incompleteSolderStripRepairInput) {
+                      const incompleteSolderStripRepairError = document.getElementById('incomplete_solder_strip_repair_error');
+                      if (incompleteSolderStripRepairInput.value) {
+                        isValid = logValidate(incompleteSolderStripRepairInput, incompleteSolderStripRepairError, 'Qty Repair - Incomplete Solder Strip (Solder Short)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemc256OlCmOspInput = document.getElementById('chemc_256_ol_cm_osp');
+                    if (chemc256OlCmOspInput) {
+                      const chemc256OlCmOspError = document.getElementById('chemc_256_ol_cm_osp_error');
+                      if (chemc256OlCmOspInput.value) {
+                        isValid = logValidate(chemc256OlCmOspInput, chemc256OlCmOspError, 'Qty Reject - Chem C 256 OL_CM_OSP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Feathering (AU Bridging)
+                case 'Feathering (AU Bridging)':
+                  const featheringInputs = ['feathering_repair', 'chemc_250_ol_cm_osp'];
+                  const featheringError = document.getElementById('feathering_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledFeathering = logValidateFieldset(featheringInputs, featheringError, 'Feathering (AU Bridging)', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledFeathering) {
+                    const featheringRepairInput = document.getElementById('feathering_repair');
+                    if (featheringRepairInput) {
+                      const featheringRepairError = document.getElementById('feathering_repair_error');
+                      if (featheringRepairInput.value) {
+                        isValid = logValidate(featheringRepairInput, featheringRepairError, 'Qty Repair - Feathering (AU Bridging)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemc250OlCmOspInput = document.getElementById('chemc_250_ol_cm_osp');
+                    if (chemc250OlCmOspInput) {
+                      const chemc250OlCmOspError = document.getElementById('chemc_250_ol_cm_osp_error');
+                      if (chemc250OlCmOspInput.value) {
+                        isValid = logValidate(chemc250OlCmOspInput, chemc250OlCmOspError, 'Qty Reject - Chem C 250 OL_CM_OSP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Incomplete Resist Strip
+                case 'Incomplete Resist Strip':
+                  const incompleteResistStripInputs = ['incomplete_resist_strip_repair', 'chemb_51_ol_cm_strp'];
+                  const incompleteResistStripError = document.getElementById('incomplete_resist_strip_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledIncompleteResistStrip = logValidateFieldset(incompleteResistStripInputs, incompleteResistStripError, 'Incomplete Resist Strip', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledIncompleteResistStrip) {
+                    const incompleteResistStripRepairInput = document.getElementById('incomplete_resist_strip_repair');
+                    if (incompleteResistStripRepairInput) {
+                      const incompleteResistStripRepairError = document.getElementById('incomplete_resist_strip_repair_error');
+                      if (incompleteResistStripRepairInput.value) {
+                        isValid =  logValidate(incompleteResistStripRepairInput, incompleteResistStripRepairError, 'Qty Repair - Incomplete Resist Strip', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const chemb51OlCmStrpInput = document.getElementById('chemb_51_ol_cm_strp');
+                    if (chemb51OlCmStrpInput) {
+                      const chemb51OlCmStrpError = document.getElementById('chemb_51_ol_cm_strp_error');
+                      if (chemb51OlCmStrpInput.value) {
+                        isValid = logValidate(chemb51OlCmStrpInput, chemb51OlCmStrpError, 'Qty Reject - Chem B 51  OL_CM_STRP', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // NPTH Short
+                case 'NPTH Short':
+                  const npthShortInputs = ['npth_short_repair', '142'];
+                  const npthShortError = document.getElementById('npth_short_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledNpthShort = logValidateFieldset(npthShortInputs, npthShortError, 'NPTH Short', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledNpthShort) {
+                    const npthShortRepairInput = document.getElementById('npth_short_repair');
+                    if (npthShortRepairInput) {
+                      const npthShortRepairError = document.getElementById('npth_short_repair_error');
+                      if (npthShortRepairInput.value) {
+                        isValid = logValidate(npthShortRepairInput, npthShortRepairError, 'Qty Repair - NPTH Short', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const hello142Input = document.getElementById('142');
+                    if (hello142Input) {
+                      const hello142Error = document.getElementById('142_error');
+                      if (hello142Input.value) {
+                        isValid = logValidate(hello142Input, hello142Error, 'Qty Reject - 142', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Short (Others)
+                case 'Short (Others)':
+                  const shortOthersInputs = ['short_others_repair', 'short_others_reject'];
+                  const shortOthersError = document.getElementById('short_others_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledShortOthers = logValidateFieldset(shortOthersInputs, shortOthersError, 'Short (Others)', ['anyFieldFilled']);
+  
+                  if (isAnyFieldFilledShortOthers) {
+                    const shortOthersRepairInput = document.getElementById('short_others_repair');
+                    if (shortOthersRepairInput) {
+                      const shortOthersRepairError = document.getElementById('short_others_repair_error');
+                      if (shortOthersRepairInput.value) {
+                        isValid = logValidate(shortOthersRepairInput, shortOthersRepairError, 'Qty Repair - Short (Others)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                    const shortOthersRejectInput = document.getElementById('short_others_reject');
+                    if (shortOthersRejectInput) {
+                      const shortOthersRejectError = document.getElementById('short_others_reject_error');
+                      if (shortOthersRejectInput.value) {
+                        isValid = logValidate(shortOthersRejectInput, shortOthersRejectError, 'Qty Reject - Short (Others)', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Pit & Dent (Others)
+                case 'Pit & Dent (Others)':
+                  const pitDentOthersInputs = ['479_ol_lam', '479_ol_pp_dev'];
+                  const pitDentOthersError = document.getElementById('pit_dent_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledPitDentOthers = logValidateFieldset(pitDentOthersInputs, pitDentOthersError, 'Pit & Dent (Others)', ['anyFieldFilled']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledPitDentOthers) {
+                    const olLam479Input = document.getElementById('479_ol_lam');
+                    if (olLam479Input) {
+                      const olLam479Error = document.getElementById('479_ol_lam_error');
+                      if (olLam479Input.value) {
+                        isValid = logValidate(olLam479Input, olLam479Error, 'Qty Reject - 479 OL_LAM', ['integer', 'nonZero']) && isValid;
+                      } 
+                    }
+                    const olPpDev479Input = document.getElementById('479_ol_pp_dev');
+                    if (olPpDev479Input) {
+                      const olPpDev479Error = document.getElementById('479_ol_pp_dev_error');
+                      if (olPpDev479Input.value) {
+                        isValid = logValidate(olPpDev479Input, olPpDev479Error, 'Qty Reject - 479 OL_PP_DEV', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+  
+                // Foil Wrinkle (Others)
+                case 'Foil Wrinkle (Others)':
+                  const foilWrinkleOthersInput = document.getElementById('32_ol_lam');
+                  const foilWrinkleOthersError = document.getElementById('foil_wrinkle_error');
+  
+                  // Check if any field is filled
+                  const isAnyFieldFilledFoilWrinkle = logValidate(foilWrinkleOthersInput, foilWrinkleOthersError, 'Foil Wrinkle (Others)', ['required']);
+  
+                  // If any field is filled, validate specific fields
+                  if (isAnyFieldFilledFoilWrinkle) {
+                    const olLam32Input = document.getElementById('32_ol_lam');
+                    if (olLam32Input) {
+                      const olLam32Error = document.getElementById('32_ol_lam_error');
+                      if (olLam32Input.value) {
+                        isValid = logValidate(olLam32Input, olLam32Error, 'Qty Reject - 32 OL_LAM', ['integer', 'nonZero']) && isValid;
+                      }
+                    }
+                  }
+                  else {
+                    isValid = false;
+                  }
+                  break;
+              }
+            });
+          }
+        }
+      }
+  
+      if (openInput.value > 0 || shortInput.value > 0) {
+        // Validate Done By - Tracing
+        const doneBy2Input = document.getElementById('done_by_2');
+        const doneBy2Error = document.getElementById('done_by_2_error')
+        isValid = logValidate(doneBy2Input, doneBy2Error, 'Tracing', ['required', 'integer', 'length6', 'allowedValues']) && isValid;
+  
+        // Validate Impedance Fail
+        const impedanceFailInputs = document.querySelectorAll('input[name="impedance_fail"]');
+        const impedanceFailError = document.getElementById('impedance_fail_error');
+        isValid = logValidate(impedanceFailInputs[0], impedanceFailError, 'Impedance Fail', ['required']) && isValid;
+  
+        // Validate Impedance Fail Qty
+        const impedanceFailYesInput = document.getElementById('impedance_fail_yes');
+        if (impedanceFailYesInput && impedanceFailYesInput.checked) {
+          const impedanceFailQtyInputs = ['impedance_fail_high', 'impedance_fail_low'];
+          const impedanceFailQtyError = document.getElementById('impedance_fail_qty_error');
+  
+          // Check if any field is filled
+          const isAnyFieldFilledImpedanceFailQty = logValidateFieldset(impedanceFailQtyInputs, impedanceFailQtyError, 'Impedance Fail Qty', ['anyFieldFilled', 'nonZeroFieldset']);
+  
+          // If any field is filled, validate specific fields
+          if (isAnyFieldFilledImpedanceFailQty) {
+            const impedanceFailHighInput = document.getElementById('impedance_fail_high');
+            if (impedanceFailHighInput) {
+              const impedanceFailHighError = document.getElementById('impedance_fail_high_error');
+              if (impedanceFailHighInput.value) {
+                isValid = logValidate(impedanceFailHighInput, impedanceFailHighError, 'High Qty', ['integer']) && isValid;
+              }
+            }
+            const impedanceFailLowInput = document.getElementById('impedance_fail_low');
+            if (impedanceFailLowInput) {
+              const impedanceFailLowError = document.getElementById('impedance_fail_low_error');
+              if (impedanceFailLowInput.value) {
+                isValid = logValidate(impedanceFailLowInput, impedanceFailLowError, 'Low Qty', ['integer']) && isValid;
+              }
+            }
+          }
+          else {
+            isValid = false;
+          }
+        }
+  
+        // Validate Final Passed Qty 
+        const finalPassedQtyError = document.getElementById('final_passed_qty_error');
+        isValid = logValidate(finalPassedQtyInput, finalPassedQtyError, 'Final Passed Qty', ['required', 'integer']) && isValid;
+        
+        if (testedQtyInput.value && finalPassedQtyInput.value) {
+          // Validate Final Passed Qty calculations
+          isValid = validateFinalPassedQty() && isValid;
+        }
+      }
+  
+      return isValid;
+    }
+  
+    //------------------------------------------------------------------------------------------
+    // IMMEDIATE VALIDATION
+    // ------------------------------------------------------------------------------------------
+    // Ensure immediate validation is only active before the first submission
+    let isFormSubmitted = false;
+  
+    function addBlurValidation(inputElement, errorElement, fieldName, rules) {
+      inputElement.addEventListener('blur', function () {
+        if (!isFormSubmitted) {
+          logValidate(inputElement, errorElement, fieldName, rules);
+        }
+      });
+    }
+  
+    function addInputValidation(inputElement, errorElement, fieldName, rules) {
+      inputElement.addEventListener('input', function () {
+        if (!isFormSubmitted) {
+          logValidate(inputElement, errorElement, fieldName, rules);
+        }
+      });
+    }
+  
+    // Only for fieldsets with more than 1 input
+    function addFieldsetBlurValidation(fieldsetIds, fieldsetError, fieldsetName, rules) {
+      if (!fieldsetIds || !Array.isArray(fieldsetIds) || fieldsetIds.length === 0) {
+        console.error(`Fieldset IDs for ${fieldsetName} are missing or invalid`);
+        return;
+      }
+      if (!fieldsetError) {
+        console.error(`Error element for ${fieldsetName} is missing`);
+        return;
+      }
+  
+      // Attach blur event to each input in the fieldset
+      fieldsetIds.forEach(id => {
+        const fieldsetInput = document.getElementById(id);
+        if (fieldsetInput) {
+          fieldsetInput.addEventListener('blur', () => {
+            if (!isFormSubmitted) {
+              // Validate if any field in the fieldset is filled
+              const isFieldsetValid = logValidateFieldset(fieldsetIds, fieldsetError, fieldsetName, rules);
+            }
+          });
+        }
+      });
+    }
+  
+    // Attach immediate validation (not for radios since its redundant)
+    function attachImmediateValidation() {
+      // Done By
+      const doneBy1Input = document.getElementById('done_by_1');
+      const doneBy1Error = document.getElementById('done_by_1_error')
+      addInputValidation(doneBy1Input, doneBy1Error, 'Testing', ['required', 'integer', 'length6', 'allowedValues']);
+  
+      const doneBy2Input = document.getElementById('done_by_2');
+      const doneBy2Error = document.getElementById('done_by_2_error')
+      addInputValidation(doneBy2Input, doneBy2Error, 'Tracing', ['required', 'integer', 'length6', 'allowedValues']);
+  
+      // Lot ID
+      const lotIdInput = document.getElementById('lot_id');
+      const lotIdError = document.getElementById('lot_id_error');
+      addBlurValidation(lotIdInput, lotIdError, 'Lot ID', ['required', 'integer', 'length8']);
+  
+      // Maybe include immediate validation for lot id??
+  
+      // Tool Number
+      const toolNumberInput = document.getElementById('tool_number');
+      const toolNumberError = document.getElementById('tool_number_error');
+      addBlurValidation(toolNumberInput, toolNumberError, 'Tool Number', ['required', 'pattern_S5A']);
+  
+      // Kevin Probe Test
+      // const kevinProbeTestInputs = document.querySelectorAll('input[name="kevin_probe_test"]');
+      // const kevinProbeTestError = document.getElementById('kevin_probe_test_error');
+      // addInputValidation(kevinProbeTestInputs, kevinProbeTestError, 'Kevin Probe Test', ['required']);
+  
+      // For 4Wire
+      const for4WireInput = document.getElementById('for_4wire_input');
+      if (for4WireInput) {
+        const for4WireError = document.getElementById('for_4wire_input_error');
+        addBlurValidation(for4WireInput, for4WireError, 'For 4Wire', ['required'])
+      }
+  
+      // Date Code
+      // const dateCodeInputs = document.querySelectorAll('input[name="date_code"]');
+      // const dateCodeError = document.getElementById('date_code_error');
+      // addInputValidation(dateCodeInputs, dateCodeError, 'Date Code', ['required']);
+  
+      // Date Code Input
+      const dateCodeInput = document.getElementById('date_code_input');
+      if (dateCodeInput) {
+        const dateCodeInputError = document.getElementById('date_code_input_error');
+        addBlurValidation(dateCodeInput, dateCodeInputError, 'Date Code', ['required', 'integer', 'length4']);
+      }
+  
+      // Job Type
+      const jobTypeInput = document.getElementById('job_type');
+      const jobTypeError = document.getElementById('job_type_error');
+      addBlurValidation(jobTypeInput, jobTypeError, 'Job Type', ['required']);
+  
+      // Machine
+      const machineInput = document.getElementById('machine');
+      const machineError = document.getElementById('machine_error');
+      addBlurValidation(machineInput, machineError, 'Machine', ['required']);
+  
+      // X-Cut Allowed
+      const xcutAllowedInput = document.getElementById('xcut_allowed');
+      const xcutAllowedError = document.getElementById('xcut_allowed_error');
+      addBlurValidation(xcutAllowedInput, xcutAllowedError, 'X-Cut Allowed', ['required']);
+  
+      // // IPC Class
+      // const ipcClassInputs = document.querySelectorAll('input[name="ipc_class"]');
+      // const ipcClassError = document.getElementById('ipc_class_error');
+      // addInputValidation(ipcClassInputs, ipcClassError, 'IPC Class', ['required']);
+  
+      // // Mass Lam
+      // const massLamInputs = document.querySelectorAll('input[name="mass_lam"]');
+      // const massLamError = document.getElementById('mass_lam_error');
+      // addInputValidation(massLamInputs, massLamError, 'Mass Lam', ['required']);
+  
+      // // Resistive
+      // const resistiveInputs = document.querySelectorAll('input[name="resistive"]');
+      // const resistiveError = document.getElementById('resistive_error');
+      // addInputValidation(resistiveInputs, resistiveError, 'Resistive', ['required']);
+  
+      // Continuity
+      const continuityInput = document.getElementById('continuity');
+      const continuityError = document.getElementById('continuity_error');
+      addBlurValidation(continuityInput, continuityError, 'Continuity', ['required', 'integer', 'range5to300']);
+  
+      // Test Voltage
+      const testVoltageInput = document.getElementById('test_voltage');
+      const testVoltageError = document.getElementById('test_voltage_error');
+      addBlurValidation(testVoltageInput, testVoltageError, 'Test Voltage', ['required', 'integer', 'range100to300']);
+  
+      // Isolation
+      const isolationInput = document.getElementById('isolation');
+      const isolationError = document.getElementById('isolation_error');
+      addBlurValidation(isolationInput, isolationError, 'Isolation', ['required', 'integer', 'range10to20']);
+  
+      // Adjacency Used
+      // const adjacencyUsedInputs = document.querySelectorAll('input[name="adjacency_used"]');
+      // const adjacencyUsedError = document.getElementById('adjacency_used_error');
+      // addInputValidation(adjacencyUsedInputs, adjacencyUsedError, 'Adjacency Used', ['required']);
+  
+      // Mfg Qty
+      const mfgQtyInput = document.getElementById('mfg_qty');
+      const mfgQtyError = document.getElementById('mfg_qty_error');
+      addBlurValidation(mfgQtyInput, mfgQtyError, 'Mfg Qty', ['required', 'integer', 'nonZero']);
+  
+      // Tested Qty
+      const testedQtyInput = document.getElementById('tested_qty');
+      const testedQtyError = document.getElementById('tested_qty_error');
+      addBlurValidation(testedQtyInput, testedQtyError, 'Tested Qty', ['required', 'integer', 'nonZero', 'lessThanOrEqual:mfg_qty']);
+  
+      // 1st Passed Qty
+      const firstPassedQtyInput = document.getElementById('first_passed_qty');
+      const firstPassedQtyError = document.getElementById('first_passed_qty_error');
+      addBlurValidation(firstPassedQtyInput, firstPassedQtyError, '1st Passed Qty', ['required', 'integer', 'nonZero', 'lessThanOrEqual:tested_qty']);
+  
+      // Open
+      const openInput = document.getElementById('open');
+      const openError = document.getElementById('open_error');
+      addBlurValidation(openInput, openError, 'Open', ['required', 'integer']);
+  
+      // Short
+      const shortInput = document.getElementById('short');
+      const shortError = document.getElementById('short_error');
+      addBlurValidation(shortInput, shortError, 'Short', ['required', 'integer']);
+  
+      // SDP
+      const sdpInput = document.getElementById('SDP');
+      const sdpError = document.getElementById('SDP_error');
+      addBlurValidation(sdpInput, sdpError, 'SDP', ['required', 'integer']);
+  
+      [mfgQtyInput, testedQtyInput, firstPassedQtyInput, openInput, shortInput, sdpInput].forEach(input => {
+        input.addEventListener('blur', () => {
+          validateTotalQtyFallout();
+        });
+      });
+  
+      // Open Circuit Reason
+      const openCircuitDropdown = document.getElementById('open_circuit_defect');
+      const openCircuitDropdownError = document.getElementById('open_circuit_dropdown_error');
+      addBlurValidation(openCircuitDropdown, openCircuitDropdownError, 'Open Circuit Reason', ['required']);
+  
+      // Innerlayer Open
+      const ilStrip080Input = document.getElementById('080_il_strip');
+      const ilStrip080Error = document.getElementById('080_il_strip_error');
+      addBlurValidation(ilStrip080Input, ilStrip080Error, 'Qty Reject - 080 IL_STRIP', ['integer', 'nonZero']);
+  
+      // Void Hole
+      const chema180OlCmDmOInput = document.getElementById('chema_180_ol_cm_dm_o');
+      const chema180OlCmDmOError = document.getElementById('chema_180_ol_cm_dm_o_error');
+      addBlurValidation(chema180OlCmDmOInput, chema180OlCmDmOError, 'Qty Reject - CHEM A 180 OL_CM_DM_O', ['integer', 'nonZero']);
+  
+      // Partial Feature (Blind Via Void)
+      const chema477OlCmDmOInput = document.getElementById('chema_477_ol_cm_dm_o');
+      const chema477OlCmDmOError = document.getElementById('chema_477_ol_cm_dm_o_error');
+      addBlurValidation(chema477OlCmDmOInput, chema477OlCmDmOError, 'Qty Reject - Chem A 477 OL_CM_DM_O', ['integer', 'nonZero']);
+  
+      // Lifted Feature (Circuit Peel-Off)
+      const liftedFeatureInputs = ['473_ol_lpsm_cure', '473_ol_cm_osp', '473_ol_cm_strp'];
+      const liftedFeatureError = document.getElementById('lifted_feature_error');
+      addFieldsetBlurValidation(liftedFeatureInputs, liftedFeatureError, 'Lifted Feature (Circuit Peel-Off)', ['anyFieldFilled']);
+  
+      const olLpsmCure473Input = document.getElementById('473_ol_lpsm_cure');
+      const olLpsmCure473Error = document.getElementById('473_ol_lpsm_cure_error');
+      addBlurValidation(olLpsmCure473Input, olLpsmCure473Error, 'Qty Reject - 473 OL_LPSM_CURE', ['integer', 'nonZero']);
+  
+      const olCmOsp473Input = document.getElementById('473_ol_cm_osp');
+      const olCmOsp473Error = document.getElementById('473_ol_cm_osp_error');
+      addBlurValidation(olCmOsp473Input, olCmOsp473Error, 'Qty Reject - 473 OL_CM_OSP', ['integer', 'nonZero']);
+  
+      const olCmStrp473Input = document.getElementById('473_ol_cm_strp');
+      const olCmStrp473Error = document.getElementById('473_ol_cm_strp_error');
+      addBlurValidation(olCmStrp473Input, olCmStrp473Error, 'Qty Reject - 473 OL_CM_STRP', ['integer', 'nonZero']);
+      
+      // Missing Hole
+      const olDrl133Input = document.getElementById('133_ol_drl');
+      const olDrl133Error = document.getElementById('133_ol_drl_error');
+      addBlurValidation(olDrl133Input, olDrl133Error, 'Qty Reject - 133 OL_DRL', ['integer', 'nonZero']);
+  
+      // Outerlayer Open
+      const outerlayerOpenInputs = ['outerlayer_open_repair', 'photoprint_080_ol_pp_dev'];
+      const outerlayerOpenError = document.getElementById('outerlayer_open_error');
+      addFieldsetBlurValidation(outerlayerOpenInputs, outerlayerOpenError, 'Outerlayer Open', ['anyFieldFilled']);
+  
+      const outerlayerOpenRepairInput = document.getElementById('outerlayer_open_repair');
+      const outerlayerOpenRepairError = document.getElementById('outerlayer_open_repair_error');
+      addBlurValidation(outerlayerOpenRepairInput, outerlayerOpenRepairError, 'Qty Repair - Outerlayer Open', ['integer', 'nonZero']);
+  
+      const photoprint080OlPpDevInput = document.getElementById('photoprint_080_ol_pp_dev');
+      const photoprint080OlPpDevError = document.getElementById('photoprint_080_ol_pp_dev_error');
+      addBlurValidation(photoprint080OlPpDevInput, photoprint080OlPpDevError, 'Qty Reject - Photoprint 080 OL_PP_DEV', ['integer', 'nonZero']);
+  
+      // Mask on Pad/Finger
+      const maskOnPadFingerInputs = ['mask_on_pad_finger_repair', '205_ol_sm_cure'];
+      const maskOnPadFingerError = document.getElementById('mask_on_pad_finger_error');
+      addFieldsetBlurValidation(maskOnPadFingerInputs, maskOnPadFingerError, 'Mask on Pad/Finger', ['anyFieldFilled']);
+  
+      const maskOnPadFingerRepairInput = document.getElementById('mask_on_pad_finger_repair');
+      const maskOnPadFingerRepairError = document.getElementById('mask_on_pad_finger_repair_error');
+      addBlurValidation(maskOnPadFingerRepairInput, maskOnPadFingerRepairError, 'Qty Repair - Mask on Pad/Finger', ['integer', 'nonZero']);
+  
+      const olSmCure205Input = document.getElementById('205_ol_sm_cure');
+      const olSmCure205Error = document.getElementById('205_ol_sm_cure_error');
+      addBlurValidation(olSmCure205Input, olSmCure205Error, 'Qty Reject - 205 OL_SM_CURE', ['integer', 'nonZero']);
+  
+      // Plating Nodule (Particle in Hole)
+      const platingNoduleInputs = ['plating_nodule_repair', '178_ol_cm_strp'];
+      const platingNoduleError = document.getElementById('plating_nodule_error');
+      addFieldsetBlurValidation(platingNoduleInputs, platingNoduleError, 'Plating Nodule (Particle in Hole)', ['anyFieldFilled']);
+  
+      const platingNoduleRepairInput = document.getElementById('plating_nodule_repair');
+      const platingNoduleRepairError = document.getElementById('plating_nodule_repair_error');
+      addBlurValidation(platingNoduleRepairInput, platingNoduleRepairError, 'Qty Repair - Plating Nodule (Particle in Hole)', ['integer', 'nonZero']);
+  
+      const olCmStrp178Input = document.getElementById('178_ol_cm_strp');
+      const olCmStrp178Error = document.getElementById('178_ol_cm_strp_error');
+      addBlurValidation(olCmStrp178Input, olCmStrp178Error, 'Qty Reject - 178 OL_CM_STRP', ['integer', 'nonZero']);
+  
+      // Legend on Pad/Hole
+      const legendOnPadHoleInputs = ['legend_on_pad_hole_repair', '233_ol_lpsm_cure'];
+      const legendOnPadHoleError = document.getElementById('legend_on_pad_hole_error');
+      addFieldsetBlurValidation(legendOnPadHoleInputs, legendOnPadHoleError, 'Legend on Pad/Hole', ['anyFieldFilled']);
+  
+      const legendOnPadHoleRepairInput = document.getElementById('legend_on_pad_hole_repair');
+      legendOnPadHoleRepairError = document.getElementById('legend_on_pad_hole_repair_error');
+      addBlurValidation(legendOnPadHoleRepairInput, legendOnPadHoleRepairError, 'Qty Repair - Legend on Pad/Hole', ['integer', 'nonZero']);
+  
+      const olLpsmCure233Input = document.getElementById('233_ol_lpsm_cure');
+      const olLpsmCure233Error = document.getElementById('233_ol_lpsm_cure_error');
+      addBlurValidation(olLpsmCure233Input, olLpsmCure233Error, 'Qty Reject - 233 OL_LPSM_CURE', ['integer', 'nonZero']);
+  
+      // Others Open
+      const othersOpenInputs = ['others_open_repair', 'others_open_reject'];
+      const othersOpenError = document.getElementById('others_open_error');
+      addFieldsetBlurValidation(othersOpenInputs, othersOpenError, 'Others Open', ['anyFieldFilled']);
+  
+      const othersOpenRepairInput = document.getElementById('others_open_repair');
+      const othersOpenRepairError = document.getElementById('others_open_repair_error');
+      addBlurValidation(othersOpenRepairInput, othersOpenRepairError, 'Qty Repair - Others Open', ['integer', 'nonZero']);
+  
+      // False o/c
+      const falseOcRepairInput = document.getElementById('false_oc_repair');
+      const falseOcRepairError = document.getElementById('false_oc_repair_error');
+      addBlurValidation(falseOcRepairInput, falseOcRepairError, 'Qty Repair -False o/c', ['integer', 'nonZero']);
+  
+      // Short Circuit Reason
+      const shortCircuitDropdown = document.getElementById('short_circuit_defect');
+      const shortCircuitDropdownError = document.getElementById('short_circuit_dropdown_error');
+      addBlurValidation(shortCircuitDropdown, shortCircuitDropdownError, 'Short Circuit Reason', ['required']);
+  
+      // Short (Plating Under Resist) (Dry Film Flake-Off)
+      const shortInputs = ['short_repair', 'photoprint_083_ol_pp_dev'];
+      const shortPlatingError = document.getElementById('short_plating_error');
+      addFieldsetBlurValidation(shortInputs, shortPlatingError, 'Short (Plating Under Resist) (Dry Film Flake-Off)', ['anyFieldFilled']);
+  
+      const shortRepairInput = document.getElementById('short_repair');
+      const shortRepairError = document.getElementById('short_repair_error');
+      addBlurValidation(shortRepairInput, shortRepairError, 'Qty Repair - Short (Plating Under Resist) (Dry Film Flake-Off)', ['integer', 'nonZero']);
+  
+      const photoprint083OlPpDevInput = document.getElementById('photoprint_083_ol_pp_dev');
+      const photoprint083OlPpDevError = document.getElementById('photoprint_083_ol_pp_dev_error');
+      addBlurValidation(photoprint083OlPpDevInput, photoprint083OlPpDevError, 'Qty Reject - Photoprint 083 OL_PP_DEV', ['integer', 'nonZero']);
+  
+      // Scratches
+      const scratchesInputs = ['scratches_repair', 'photoprint_483_ol_pp_dev', 'chemb_483_ol_cm_strp', 'chemc_483_ol_cm_osp'];
+      const scratchesError = document.getElementById('scratches_error');
+      addFieldsetBlurValidation(scratchesInputs, scratchesError, 'Scratches', ['anyFieldFilled']);
+  
+      const scratchesRepairInput = document.getElementById('scratches_repair');
+      const scratchesRepairError = document.getElementById('scratches_repair_error');
+      addBlurValidation(scratchesRepairInput, scratchesRepairError, 'Qty Repair - Scratches', ['integer', 'nonZero']);
+  
+      const photoprint483OlPpDevInput = document.getElementById('photoprint_483_ol_pp_dev');
+      const photoprint483OlPpDevError = document.getElementById('photoprint_483_ol_pp_dev_error');
+      addBlurValidation(photoprint483OlPpDevInput, photoprint483OlPpDevError, 'Qty Reject - Photoprint 483 OL_PP_DEV', ['integer', 'nonZero']);
+  
+      const chemb483OlCmStrpInput = document.getElementById('chemb_483_ol_cm_strp');
+      const chemb483OlCmStrpError = document.getElementById('chemb_483_ol_cm_strp_error');
+      addBlurValidation(chemb483OlCmStrpInput, chemb483OlCmStrpError, 'Qty Reject - Chem B 483 OL_CM_STRP', ['integer', 'nonZero']);
+  
+      const chemc483OlCmOspInput = document.getElementById('chemc_483_ol_cm_osp');
+      const chemc483OlCmOspError = document.getElementById('chemc_483_ol_cm_osp_error');
+      addBlurValidation(chemc483OlCmOspInput, chemc483OlCmOspError, 'Qty Reject - Chem C 483 OL_CM_OSP', ['integer', 'nonZero']);
+  
+      // Cu Residue
+      const cuResidueInputs = ['cu_residue_repair', 'chemb_172_ol_cm_strp'];
+      const cuResidueError = document.getElementById('cu_residue_error');
+      addFieldsetBlurValidation(cuResidueInputs, cuResidueError, 'Cu Residue', ['anyFieldFilled']);
+  
+      const cuResidueRepairInput = document.getElementById('cu_residue_repair');
+      const cuResidueRepairError = document.getElementById('cu_residue_repair_error');
+      addBlurValidation(cuResidueRepairInput, cuResidueRepairError, 'Qty Repair - Cu Residue', ['integer', 'nonZero']);
+  
+      const chemb172OlCmStrpInput = document.getElementById('chemb_172_ol_cm_strp');
+      const chemb172OlCmStrpError = document.getElementById('chemb_172_ol_cm_strp_error');
+      addBlurValidation(chemb172OlCmStrpInput, chemb172OlCmStrpError, 'Qty Reject - Chem B 172 OL_CM_STRP', ['integer', 'nonZero']);
+  
+      // Under-etch
+      const underetchInputs = ['under_etch_repair', 'chemb_076_ol_cm_strp'];
+      const underetchError = document.getElementById('under_etch_error');
+      addFieldsetBlurValidation(underetchInputs, underetchError, 'Under-etch', ['anyFieldFilled']);
+  
+      const underetchRepairInput = document.getElementById('under_etch_repair');
+      const underetchRepairError = document.getElementById('under_etch_repair_error');
+      addBlurValidation(underetchRepairInput, underetchRepairError, 'Qty Repair - Under-etch', ['integer', 'nonZero']);
+  
+      const chemb076OlCmStrpInput = document.getElementById('chemb_076_ol_cm_strp');
+      const chemb076OlCmStrpError = document.getElementById('chemb_076_ol_cm_strp_error');
+      addBlurValidation(chemb076OlCmStrpInput, chemb076OlCmStrpError, 'Qty Reject - Chem B 076 OL_CM_STRP', ['integer', 'nonZero']);
+  
+      // Innerlayer Short
+      const ilStrip083Input = document.getElementById('083_il_strip');
+      const ilStrip083Error = document.getElementById('083_il_strip_error');
+      addBlurValidation(ilStrip083Input, ilStrip083Error, 'Qty Reject - 083 IL_STRIP', ['integer', 'nonZero']);
+  
+      // Mis-registration
+      const misregistrationInputs = ['mis_registration_repair', '471_ol_lam', '469_ol_lam'];
+      const misregistrationError = document.getElementById('mis_registration_error');
+      addFieldsetBlurValidation(misregistrationInputs, misregistrationError, 'Mis-registration', ['anyFieldFilled']);
+  
+      const misregistrationRepairInput = document.getElementById('mis_registration_repair');
+      const misregistrationRepairError = document.getElementById('mis_registration_repair_error');
+      addBlurValidation(misregistrationRepairInput, misregistrationRepairError, 'Qty Repair', ['integer', 'nonZero']);
+  
+      const olLam471Input = document.getElementById('471_ol_lam');
+      const olLam471Error = document.getElementById('471_ol_lam_error');
+      addBlurValidation(olLam471Input, olLam471Error, 'Qty Reject - 471 OL_LAM', ['integer', 'nonZero']);
+  
+      const olLam469Input = document.getElementById('469_ol_lam');
+      const olLam469Error = document.getElementById('469_ol_lam_error');
+      addBlurValidation(olLam469Input, olLam469Error, 'Qty Reject - 469 OL_LAM', ['integer', 'nonZero']);
+  
+      // Hole Shifted
+      const olDrl132Input = document.getElementById('132_ol_drl');
+      const oldrl132Error = document.getElementById('132_ol_drl_error');
+      addBlurValidation(olDrl132Input, oldrl132Error, 'Qty Reject - 132 OL_DRL', ['integer', 'nonZero']);
+  
+      // Short (Mirco-short)
+      const microShortInputs = ['micro_short_repair', 'chemb_083_ol_cm_strp', 'lpsm_083_ol_sm_cure'];
+      const mircoshortError = document.getElementById('micro_short_error');
+      addFieldsetBlurValidation(microShortInputs, mircoshortError, 'Short (Mirco-short)', ['anyFieldFilled']);
+  
+      const microShortRepairInput = document.getElementById('micro_short_repair');
+      const microShortRepairError = document.getElementById('micro_short_repair_error');
+      addBlurValidation(microShortRepairInput, microShortRepairError, 'Qty Repair - Short (Mirco-short)', ['integer', 'nonZero']);
+  
+      const chemb083OlCmStrpInput = document.getElementById('chemb_083_ol_cm_strp');
+      const chemb083OlCmStrpError = document.getElementById('chemb_083_ol_cm_strp_error');
+      addBlurValidation(chemb083OlCmStrpInput, chemb083OlCmStrpError, 'Qty Reject - Chem B 083 OL_CM_STRP', ['integer', 'nonZero']);
+  
+      const lpsm083OlSmCureInput = document.getElementById('lpsm_083_ol_sm_cure');
+      const lpsm083OlSmCureError = document.getElementById('lpsm_083_ol_sm_cure_error');
+      addBlurValidation(lpsm083OlSmCureInput, lpsm083OlSmCureError, 'Qty Reject - LPSM 083 OL_SM_CURE', ['integer', 'nonZero']);
+  
+      // Incomplete Solder Strip (Solder Short)
+      const incompleteSolderStripInputs = ['incomplete_solder_strip_repair', 'chemc_256_ol_cm_osp'];
+      const incompleteSolderStripError = document.getElementById('incomplete_solder_strip_error');
+      addFieldsetBlurValidation(incompleteSolderStripInputs, incompleteSolderStripError, 'Incomplete Solder Strip (Solder Short)', ['anyFieldFilled']);
+  
+      const incompleteSolderStripRepairInput = document.getElementById('incomplete_solder_strip_repair');
+      const incompleteSolderStripRepairError = document.getElementById('incomplete_solder_strip_repair_error');
+      addBlurValidation(incompleteSolderStripRepairInput, incompleteSolderStripRepairError, 'Qty Repair - Incomplete Solder Strip (Solder Short)', ['integer', 'nonZero']);
+  
+      const chemc256OlCmOspInput = document.getElementById('chemc_256_ol_cm_osp');
+      const chemc256OlCmOspError = document.getElementById('chemc_256_ol_cm_osp_error');
+      addBlurValidation(chemc256OlCmOspInput, chemc256OlCmOspError, 'Qty Reject - Chem C 256 OL_CM_OSP', ['integer', 'nonZero']);
+  
+      // Feathering (AU Bridging)
+      const featheringInputs = ['feathering_repair', 'chemc_250_ol_cm_osp'];
+      const featheringError = document.getElementById('feathering_error');
+      addFieldsetBlurValidation(featheringInputs, featheringError, 'Feathering (AU Bridging)', ['anyFieldFilled']);
+  
+      const featheringRepairInput = document.getElementById('feathering_repair');
+      const featheringRepairError = document.getElementById('feathering_repair_error');
+      addBlurValidation(featheringRepairInput, featheringRepairError, 'Qty Repair - Feathering (AU Bridging)', ['integer', 'nonZero']);
+  
+      const chemc250OlCmOspInput = document.getElementById('chemc_250_ol_cm_osp');
+      const chemc250OlCmOspError = document.getElementById('chemc_250_ol_cm_osp_error');
+      addBlurValidation(chemc250OlCmOspInput, chemc250OlCmOspError, 'Qty Reject - Chem C 250 OL_CM_OSP', ['integer', 'nonZero']);
+  
+      // Incomplete Resist Strip
+      const incompleteResistStripInputs = ['incomplete_resist_strip_repair', 'chemb_51_ol_cm_strp'];
+      const incompleteResistStripError = document.getElementById('incomplete_resist_strip_error');
+      addFieldsetBlurValidation(incompleteResistStripInputs, incompleteResistStripError, 'Incomplete Resist Strip', ['anyFieldFilled']);
+  
+      const incompleteResistStripRepairInput = document.getElementById('incomplete_resist_strip_repair');
+      const incompleteResistStripRepairError = document.getElementById('incomplete_resist_strip_repair_error');
+      addBlurValidation(incompleteResistStripRepairInput, incompleteResistStripRepairError, 'Qty Repair - Incomplete Resist Strip', ['integer', 'nonZero']);
+  
+      const chemb51OlCmStrpInput = document.getElementById('chemb_51_ol_cm_strp');
+      const chemb51OlCmStrpError = document.getElementById('chemb_51_ol_cm_strp_error');
+      addBlurValidation(chemb51OlCmStrpInput, chemb51OlCmStrpError, 'Qty Reject - Chem B 51  OL_CM_STRP', ['integer', 'nonZero']);
+  
+      // NPTH Short
+      const npthShortInputs = ['npth_short_repair', '142'];
+      const npthShortError = document.getElementById('npth_short_error');
+      addFieldsetBlurValidation(npthShortInputs, npthShortError, 'NPTH Short', ['anyFieldFilled']);
+  
+      const npthShortRepairInput = document.getElementById('npth_short_repair');
+      const npthShortRepairError = document.getElementById('npth_short_repair_error');
+      addBlurValidation(npthShortRepairInput, npthShortRepairError, 'Qty Repair - NPTH Short', ['integer', 'nonZero']);
+  
+      const hello142Input = document.getElementById('142');
+      const hello142Error = document.getElementById('142_error');
+      addBlurValidation(hello142Input, hello142Error, 'Qty Reject - 142', ['integer', 'nonZero']);
+  
+      // Short (Others)
+      const shortOthersInputs = ['short_others_repair', 'short_others_reject'];
+      const shortOthersError = document.getElementById('short_others_error');
+      addFieldsetBlurValidation(shortOthersInputs, shortOthersError, 'Short (Others)', ['anyFieldFilled']);
+  
+      const shortOthersRepairInput = document.getElementById('short_others_repair');
+      const shortOthersRepairError = document.getElementById('short_others_repair_error');
+      addBlurValidation(shortOthersRepairInput, shortOthersRepairError, 'Qty Repair - Short (Others)', ['integer', 'nonZero']);
+  
+      const shortOthersRejectInput = document.getElementById('short_others_reject');
+      const shortOthersRejectError = document.getElementById('short_others_reject_error');
+      addBlurValidation(shortOthersRejectInput, shortOthersRejectError, 'Qty Reject - Short (Others)', ['integer', 'nonZero']);
+  
+      // Pit & Dent (Others)
+      const pitDentOthersInputs = ['479_ol_lam', '479_ol_pp_dev'];
+      const pitDentOthersError = document.getElementById('pit_dent_error');
+      addFieldsetBlurValidation(pitDentOthersInputs, pitDentOthersError, 'Pit & Dent (Others)', ['anyFieldFilled']);
+  
+      const olLam479Input = document.getElementById('479_ol_lam');
+      const olLam479Error = document.getElementById('479_ol_lam_error');
+      addBlurValidation(olLam479Input, olLam479Error, 'Qty Reject - 479 OL_LAM', ['integer', 'nonZero']);
+  
+      const olPpDev479Input = document.getElementById('479_ol_pp_dev');
+      const olPpDev479Error = document.getElementById('479_ol_pp_dev_error');
+      addBlurValidation(olPpDev479Input, olPpDev479Error, 'Qty Reject - 479 OL_PP_DEV', ['integer', 'nonZero']);
+  
+      // Foil Wrinkle (Others)
+      const olLam32Input = document.getElementById('32_ol_lam');
+      const olLam32Error = document.getElementById('32_ol_lam_error');
+      addBlurValidation(olLam32Input, olLam32Error, 'Qty Reject - 32 OL_LAM', ['integer', 'nonZero']);
+  
+      // Impedance Fail
+      // const impedanceFailInputs = document.querySelectorAll('input[name="impedance_fail"]');
+      // const impedanceFailError = document.getElementById('impedance_fail_error');
+      // addInputValidation(impedanceFailInputs, impedanceFailError, 'Impedance Fail', ['required']);
+  
+      // Impedance Fail Qty
+      const impedanceFailQtyInputs = ['impedance_fail_high', 'impedance_fail_low'];
+      const impedanceFailQtyError = document.getElementById('impedance_fail_qty_error');
+      addFieldsetBlurValidation(impedanceFailQtyInputs, impedanceFailQtyError, 'Impedance Fail Qty', ['anyFieldFilled', 'nonZeroFieldset']);
+  
+      const impedanceFailHighInput = document.getElementById('impedance_fail_high');
+      const impedanceFailHighError = document.getElementById('impedance_fail_high_error');
+      addBlurValidation(impedanceFailHighInput, impedanceFailHighError, 'High Qty', ['integer']);
+  
+      const impedanceFailLowInput = document.getElementById('impedance_fail_low');
+      const impedanceFailLowError = document.getElementById('impedance_fail_low_error');
+      addBlurValidation(impedanceFailLowInput, impedanceFailLowError, 'Low Qty', ['integer']);
+  
+      // Final Passed Qty
+      const finalPassedQtyInput = document.getElementById('final_passed_qty');
+      const finalPassedQtyError = document.getElementById('final_passed_qty_error');
+      addBlurValidation(finalPassedQtyInput, finalPassedQtyError, 'Final Passed Qty', ['required', 'integer']);
+  
+      [testedQtyInput, finalPassedQtyInput].forEach(input => {
+        input.addEventListener('blur', () => {
+          validateFinalPassedQty();
+        });
+      });
+    }
+  
+    //------------------------------------------------------------------------------------------
+    // OVERVIEW
+    // ------------------------------------------------------------------------------------------
+    function showOverviewModal() {
+      const modal = document.getElementById('overviewModal');
+      const table = document.getElementById('overviewTable');
+      const tbody = document.createElement('tbody');
+  
+      // Clear existing content in tbody
+      table.innerHTML = '';
+  
+      // Get all form input elements and fieldsets
+      const inputs = document.querySelectorAll('#mainForm input, #mainForm select');
+  
+      // Function to check if an element or its closest fieldset or form-group is visible
+      const isVisible = (element) => {
+        const fieldset = element.closest('fieldset');
+        const formGroup = element.closest('.form-group');
+        const containerDiv = element.closest('div');
+  
+        const fieldsetVisible = fieldset ? !fieldset.classList.contains('hidden') && !fieldset.classList.contains('hide') : true;
+        const formGroupVisible = formGroup ? !formGroup.classList.contains('hidden') && !formGroup.classList.contains('hide') : true;
+        const divVisible = containerDiv ? !containerDiv.classList.contains('hidden') && !containerDiv.classList.contains('hide') : true;
+  
+        // Return true only if all are visible
+        return fieldsetVisible && formGroupVisible && divVisible;
+      };
+  
+      // Track processed input IDs
+      const processedInputs = new Set();
+  
+      // Function to create a row in the modal
+      const createRow = (label, value) => {
+        const row = document.createElement('tr');
+        const cellLabel = document.createElement('td');
+        cellLabel.textContent = label;
+        row.appendChild(cellLabel);
+  
+        const cellValue = document.createElement('td');
+        cellValue.textContent = value || '';
+        row.appendChild(cellValue);
+  
+        tbody.appendChild(row);
+      };
+  
+      // Iterate through each form input
+      inputs.forEach(input => {
+        // Skip specific inputs
+        if (input.id === 'open_circuit_defect' || input.id === 'short_circuit_defect') {
+          return;
+        }
+  
+        if (isVisible(input)) {
+          let value;
+          let label;
+  
+          if (input.type === 'radio') {
+            const radioGroupName = input.name;
+            if (!processedInputs.has(radioGroupName)) {
+              const checkedRadio = document.querySelector(`input[name="${input.name}"]:checked`);
+              value = checkedRadio ? checkedRadio.value : '';
+              label = input.closest('.form-group').querySelector('.form-label').textContent.trim();
+  
+              // Create row for radio buttons
+              createRow(label, value);
+  
+              // Mark this radio group as processed
+              processedInputs.add(radioGroupName);
+            }
+          } 
+          else {
+            value = input.value;
+            if (input.id === 'open_circuit_selection') {
+              label = 'Open Circuit Reason';
+            } 
+            else if (input.id === 'short_circuit_selection') {
+              label = 'Short Circuit Reason';
+            } 
+            else if (input.id === 'impedance_fail_high') {
+              label = 'High Qty'
+            }
+            else if (input.id === 'impedance_fail_low') {
+              label = 'Low Qty'
+            }
+            else {
+              label = document.querySelector(`label[for="${input.id}"]`) ?
+                document.querySelector(`label[for="${input.id}"]`).textContent.trim() : input.id;
+            }
+  
+            // Create row for inputs
+            createRow(label, value);
+  
+            // Mark this input as processed
+            processedInputs.add(input.id);
+          }
+        }
+      });
+  
+      // Append the tbody to the table
+      table.appendChild(tbody);
+  
+      // Show the modal
+      modal.style.display = 'block';
+    }
+  
+    function hideOverviewModal() {
+      const modal = document.getElementById('overviewModal');
+      modal.style.display = 'none';
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // SAVING FORM 1
+    // ------------------------------------------------------------------------------------------
+    function submitSave(e) {
+      // Prevent default form submission
+      e.preventDefault();
+  
+      // Validate form
+      if (validateForm1()) {
+        var form = document.getElementById('mainForm');
+        var formData = new FormData(form);
+  
+        // Only save necessary fields
+        const saveFields = ['done_by_1', 'split_id', 'lot_id', 'lot_id_suffix', 'tool_number', 'kevin_probe_test', 'for_4wire_input', 'date_code', 'date_code_input', 'job_type', 'machine', 'xcut_allowed', 'ipc_class', 'mass_lam', 'resistive', 'continuity', 'test_voltage', 'isolation', 'adjacency_used', 'mfg_qty', 'tested_qty', 'first_passed_qty', 'open', 'short', 'sdp'];
+        const formObject = {};
+        saveFields.forEach(field => {
+          if (formData.get(field)) formObject[field] = formData.get(field);
+        });
+  
+        google.script.run.withSuccessHandler(() => {
+          // Show submitted form modal
+          showModal('savedModal');
+  
+          // Scroll to the top of the page
+          window.scrollTo(0, 0);
+  
+          // Auto-close the modal after 1 second
+          setTimeout(function() {
+            closeModal('savedModal');
+  
+            // Reset form
+            resetForm();
+  
+            // Automatically focus on the first field
+            var doneByInput = document.getElementById('done_by_1');
+            if (doneByInput) {
+              doneByInput.focus();
+            }
+          }, 1000);
+  
+          // isFormSubmitted = true; // Mark as submitted
+        }).saveFormData(formObject);
+      }
+      else {
+        console.error('Form validation failed.');
+  
+        // Focus on the first invalid element
+        var firstInvalidElement = document.querySelector('.is-invalid');
+        if (firstInvalidElement) {
+          firstInvalidElement.focus();
+          // Scroll to bring the element into view
+          firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        }
+        else {
+          console.error('No element found with .form-error class.');
+        }
+  
+      }
+    }
+  
+    // Auto fill the form with existing data from Form 1
+    function autoFillForm(formData) {
+      var splitId = document.getElementById('split_id').value;
+      var lotId = document.getElementById('lot_id').value.trim();
+      var lotIdSuffix = document.getElementById('lot_id_suffix').value;
+  
+      if (!lotId) {
+        console.error("Not all identifier fields were filled.");
+        return; // Stop execution if any identifier field is empty
+      }
+  
+      // Field mapping between form data and form fields
+      const fieldMappings = {
+        'done_by_1': 'DONE BY - TESTING',
+        'split_id': 'SPLIT ID',
+        'lot_id': 'LOT ID',
+        'lot_id_suffix': 'LOT ID SUFFIX',
+        'tool_number': 'TOOL NUMBER (S  NO)',
+        'kevin_probe_test': 'KEVIN PROBE TEST',
+        'for_4wire_input': 'FOR 4WIRE',
+        'date_code': 'DATE CODE',
+        'date_code_input': 'DATE CODE INPUT',
+        'job_type': 'JOB TYPE',
+        'machine': 'MACHINE',
+        'xcut_allowed': 'X-CUT ALLOWED',
+        'ipc_class': 'IPC CLASS',
+        'mass_lam': 'MASS LAM',
+        'resistive': 'RESISTIVE',
+        'continuity': 'CONTINUITY (Ω)',
+        'test_voltage': 'TEST VOLTAGE (V)',
+        'isolation': 'ISOLATION (MΩ)',
+        'adjacency_used': 'ADJACENCY USED',
+        'mfg_qty': 'MFG QTY',
+        'tested_qty': 'TESTED QTY',
+        'first_passed_qty': '1ST PASSED QTY',
+        'open': 'OPEN',
+        'short': 'SHORT',
+        'SDP' : 'SDP'
+      };
+  
+      function setRadioButton(fieldName, formValue, toggleDivId = null) {
+        const radios = document.querySelectorAll(`input[name="${fieldName}"]`);
+  
+        let isChecked = false;
+        let isNoSelected = false;
+  
+        radios.forEach(radio => {
+          let radioValue = radio.value;
+  
+          // Handle numeric and string form values
+          if (typeof formValue === 'number') {
+            // Numeric comparison for fields like IPC Class
+            if (parseInt(radioValue) === formValue) {
+              radio.checked = true;
+              isChecked = true;
+            }
+          } else if (typeof formValue === 'string') {
+            // String comparison for fields like Yes/No
+            if (formValue.toUpperCase() === radioValue.toUpperCase()) {
+              radio.checked = true;
+              isChecked = true;
+              if (radioValue.toUpperCase() === 'NO') {
+                isNoSelected = true;
+              }
+            }
+          }
+        });
+  
+        // Toggle visibility logic
+        if (toggleDivId) {
+          // DEBUG
+          console.log(`Attempting to find element with ID: ${toggleDivId}`);
+          const divElement =  document.getElementById(toggleDivId);
+  
+          if (divElement) {
+            // DEBUG
+            console.log(`Element with ID ${toggleDivId} found:`, divElement);
+            if (!isChecked || isNoSelected) {
+              // DEBUG
+              console.log(`Setting visibility of ${toggleDivId} to hidden.`);
+              toggleFormElementVisibility(toggleDivId, false, 1);
+            }
+            else {
+              toggleFormElementVisibility(toggleDivId, true, 1);
+            }
+          }
+          else {
+            console.error(`No element found for id: ${toggleDivId}`);
+          }
+        }
+      }
+  
+      function setDropdownValue(fieldId, formValue) {
+        const selectElement = document.getElementById(fieldId);
+        if (selectElement && formValue !== undefined) {
+          // Convert formValue to a number 
+          const valueToSet = (typeof formValue === 'string') ? parseInt(formValue, 10) : formValue;
+          selectElement.value = formValue;
+        }
+      }
+  
+      google.script.run.withSuccessHandler(serverData => {
+        if (serverData) {
+          // Handle text fields
+          Object.keys(fieldMappings).forEach(fieldId => {
+            const formKey = fieldMappings[fieldId];
+            const fieldValue = serverData[formKey];
+            const fieldElement = document.getElementById(fieldId);
+  
+            if (fieldElement && fieldValue !== undefined) {
+              if (fieldElement.type === 'radio') {
+                setRadioButton(fieldId, fieldValue);
+              }
+              else if (fieldElement.tagName === 'SELECT') {
+                setDropdownValue(fieldId, fieldValue);
+              }
+              else {
+                fieldElement.value = fieldValue;
+              }
+            }
+          });
+  
+          // Handle radio
+          const radioFields = [
+            { name: 'kevin_probe_test', divId: 'for_4wire_input_div' },
+            { name: 'date_code', divId: 'date_code_input_div' },
+            { name: 'ipc_class', divId: null },
+            { name: 'mass_lam', divId: null },
+            { name: 'resistive', divId: null },
+            { name: 'adjacency_used', divId: null },
+          ];
+  
+          radioFields.forEach(({ name, divId }) => {
+            const formValue = serverData[fieldMappings[name]]
+            setRadioButton(name, formValue, divId);
+          });
+  
+          // Handle SELECT
+          ['job_type', 'machine', 'xcut_allowed'].forEach(fieldId => {
+            setDropdownValue(fieldId, serverData[fieldId]);
+          });
+  
+          console.log('xcut_allowed:', serverData['xcut_allowed']);
+  
+          toggleDropdown();
+        }
+        else {
+          showModal('noMatchModal');
+        }
+      })
+  
+      .withFailureHandler(error => {
+        console.error("Error occurred while fetching data:", error);
+      })
+      .autoFillForm2(splitId, lotId, lotIdSuffix);
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // SUBMIT VALIDATION
+    // ------------------------------------------------------------------------------------------
+    function submitForm(e) {
+      // Prevent default form submission
+      e.preventDefault();
+  
+      // Validate form
+      if (validateForm()) {
+        var form = document.getElementById('mainForm');
+        var formData = new FormData(form);
+  
+        // Convert FormData to a plain object
+        var formObject = {};
+        formData.forEach((value, key) => {
+          formObject[key] = value.toUpperCase();
+        });
+  
+        var splitId = formObject['split_id'] || '';
+        var lotId = formObject['lot_id'];
+        var lotIdSuffix = formObject['lot_id_suffix'] || '';
+        var fullLotId = splitId + lotId + lotIdSuffix
+  
+        // Submit form data via google.script.run
+        google.script.run.withSuccessHandler(function(response) {
+          // Show submitted form modal
+          showModal('successModal');
+  
+          // Scroll to the top of the page
+          window.scrollTo(0, 0);
+  
+          google.script.run.withSuccessHandler(function(deleteResponse) {
+            console.log(deleteResponse);
+          }).deleteRowByFullLotId(fullLotId)
+  
+          // Auto-close the modal after 1 second
+          setTimeout(function() {
+            closeModal('successModal');
+  
+            // Reset form
+            resetForm();
+  
+            // Automatically focus on the first field
+            var doneByInput = document.getElementById('done_by_1');
+            if (doneByInput) {
+              doneByInput.focus();
+            }
+          }, 1000);
+  
+          isFormSubmitted = true; // Mark as submitted
+        }).submitFormData(formObject);
+      }
+      else {
+        console.error('Form validation failed.');
+  
+        // Focus on the first invalid element
+        var firstInvalidElement = document.querySelector('.is-invalid');
+        if (firstInvalidElement) {
+          firstInvalidElement.focus();
+          // Scroll to bring the element into view
+          firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        }
+        else {
+          console.error('No element found with .form-error class.');
+        }
+  
+      }
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // MODAL
+    // ------------------------------------------------------------------------------------------
+    function showModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.style.display = 'block'; // Show the modal
+      }
+      else {
+        console.error(`${modalId} not found`);
+      }
+    }
+  
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.style.display = 'none'; // Hide the modal
+      }
+      else {
+        console.error(`${modalId} not found`);
+      }
+    }
+  
+    // ------------------------------------------------------------------------------------------
+    // EVENT LISTENERS
+    // ------------------------------------------------------------------------------------------
+    window.onload = function() {
+      loadEmployeeIds();
+      loadFullLotIds(
+        '14thocGSc9x-eaVVVMITJ3DWSj3SNUR1uhQQrNzDL4wE',
+        'MDv2',
+        'CE3:CE',
+        'mdv2FullLotIds'
+      );
+      loadFullLotIds(
+        '1hFpcDc7CtFx4MHh4jalZkbE041xQvyULyS_Tz47vBUo',
+        'Form1Data',
+        'Z2:Z',
+        'form1DataFullLotIds'
+      )
+    }
+  
+    document.addEventListener('DOMContentLoaded', () => {
+      attachImmediateValidation();
+  
+      // Done By
+      const doneByInput = document.getElementById('done_by_1');
+  
+      // Automatically focus on the first field
+      if (doneByInput) {
+        doneByInput.focus();
+      }
+  
+      // Kevin Probe Test
+      const kevinProbeTestYes = document.getElementById('kevin_probe_test_yes');
+      const kevinProbeTestNo = document.getElementById('kevin_probe_test_no');
+  
+      // For 4Wire
+      if (kevinProbeTestYes && kevinProbeTestNo) {
+        kevinProbeTestYes.addEventListener('change', function() {
+          toggleFormElementVisibility('for_4wire_input_div', true, 1); 
+        });
+  
+        kevinProbeTestNo.addEventListener('change', function() {
+          toggleFormElementVisibility('for_4wire_input_div', false, 1);
+  
+          resetInputElement(document.getElementById('for_4wire_input'));
+          clearError('for_4wire_input_error');
+        });
+      }
+      else {
+        console.error("Kevin Probe Test buttons not found.")
+      }
+  
+      // Date Code
+      const dateCodeYes = document.getElementById('date_code_yes');
+      const dateCodeNo = document.getElementById('date_code_no');
+  
+      // Toggle Date Code Input 
+      if (dateCodeYes && dateCodeNo) {
+        dateCodeYes.addEventListener('change', function() {
+          toggleFormElementVisibility('date_code_input_div', true, 1); 
+        });
+  
+        dateCodeNo.addEventListener('change', function() {
+          toggleFormElementVisibility('date_code_input_div', false, 1);
+  
+          resetInputElement(document.getElementById('date_code_input'));
+          clearError('date_code_input_error'); 
+        });
+      }
+      else {
+        console.error("Date Code Yes/No radio buttons not found.")
+      }
+  
+      // Open
+      const openInput = document.getElementById('open');
+  
+      // Short
+      const shortInput = document.getElementById('short');
+  
+      // Open/Short Ciruit Dropdown
+      const openCircuitDropdown = document.getElementById('open_circuit_dropdown');
+      const shortCircuitDropdown = document.getElementById('short_circuit_dropdown');
+  
+      // Toggle dropdown when value of open/short changes
+      if (openInput) {
+        openInput.addEventListener('input', () => {
+          toggleDropdown();
+        });
+      }
+      else {
+        console.error("Open input not found.")
+      }
+  
+      if (shortInput) {
+        shortInput.addEventListener('input', () => {
+          toggleDropdown();
+        });
+      }
+      else {
+        console.error("Short input not found.")
+      }
+  
+      // Toggle fieldsets based on open/short circuit dropdown change
+      let currentDefectType = '';
+  
+      if (openCircuitDropdown) {
+        openCircuitDropdown.addEventListener('change', () => {
+          const selectedValue = openCircuitDropdown.value;
+  
+          // Hide all fieldsets if switching to a different defect type
+          if (currentDefectType != 'openCircuit' && selectedValue != currentDefectType) {
+            // hideAllFieldsets();
+          }
+  
+          currentDefectType = 'openCircuit';
+  
+          // Collect selected values and add new selections
+          addCircuitSelection('open', openSelectedValues);
+  
+          // Clear error message after selection
+          clearErrorMessage({ target: openCircuitDropdown });
+        });
+      }
+      else {
+        console.error("Open Circuit dropdown not found.")
+      }
+  
+      if (shortCircuitDropdown) {
+        shortCircuitDropdown.addEventListener('change', () => {
+          const selectedValue =shortCircuitDropdown.value;
+  
+          // Hide all fieldsets if switching to a different defect type
+          if (currentDefectType !== 'shortCircuit' && selectedValue !== currentDefectType) {
+            // hideAllFieldsets();
+          }
+  
+          currentDefectType = 'shortCircuit';
+  
+          // Collect selected values and add new selections
+          addCircuitSelection('short', shortSelectedValues);
+  
+          // Clear error message after selection
+          clearErrorMessage({ target: shortCircuitDropdown });
+        });
+      }
+      else {
+        console.error("Short Circuit dropdown not found.")
+      }
+  
+      // Adds value to array for open/short circuit selection
+      document.getElementById('open_circuit_defect').addEventListener('change', () => {
+        addCircuitSelection('open', openSelectedValues);
+      });
+  
+      document.getElementById('short_circuit_defect').addEventListener('change', () => {
+        addCircuitSelection('short', shortSelectedValues);
+      });
+  
+      // Impedance Fail
+      const impedanceFailYes = document.getElementById('impedance_fail_yes');
+      const impedanceFailNo = document.getElementById('impedance_fail_no');
+  
+      // Toggle Impedance Fail
+      if (impedanceFailYes && impedanceFailNo) {
+        impedanceFailYes.addEventListener('change', function() {
+          toggleDropdown();
+        });
+        impedanceFailNo.addEventListener('change', function() {
+          toggleDropdown();
+          resetFieldsetErrors('impedance_fail_qty_details');
+        });
+      }
+  
+      // Clear error message
+      const inputs = document.querySelectorAll('input, select');
+      inputs.forEach(input => {
+        if (input.type === 'radio') {
+          input.addEventListener('change', (event) => {
+            clearErrorMessage(event);
+          });
+        }
+        else {
+          input.addEventListener('input', (event) => {
+            clearErrorMessage(event);
+          });
+        }
+      });
+  
+      const fieldsets = document.querySelectorAll('.fieldset-container');
+      fieldsets.forEach(fieldset => {
+        // Get the error element for the current fieldset
+        const fieldsetErrorElement = fieldset.querySelector('.fieldset-error');
+        if (!fieldsetErrorElement) {
+          console.error('No fieldset error element found in the fieldset');
+          return;
+        }
+  
+        // Get all input elements within the fieldset
+        const fieldsetInputs = fieldset.querySelectorAll('input');
+        if (fieldsetInputs.length === 0) {
+          console.warn('No inputs found in the fieldset');
+          return;
+        }
+  
+        // Extract their IDs into an array
+        const fieldsetInputIds = Array.from(fieldsetInputs).map(input => input.id);
+  
+        // Attach event listeners to each input
+        fieldsetInputs.forEach(input => {
+          if (input instanceof HTMLInputElement) {
+            input.addEventListener('input', () => {
+              const anyFieldFilled = Array.from(fieldsetInputs).some(input => input.value.trim() !== '');
+              if (anyFieldFilled) {
+                clearFieldsetErrorMessage(fieldsetInputIds, fieldsetErrorElement);
+              }
+            });
+          } 
+          else {
+            console.error('Selected element is not an HTMLInputElement');
+          }
+        });
+      });
+  
+      // Overview button
+      document.getElementById('overviewButton').addEventListener('click', showOverviewModal);
+  
+      // Close button for overview
+      document.querySelector('.close-btn').addEventListener('click', hideOverviewModal);
+  
+      // Hide modal when clicking outside of it
+      window.addEventListener('click', function(event) {
+        const modal = document.getElementById('overviewModal');
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+  
+      // Close button for no matching Lot ID
+      document.getElementById('closeModal').addEventListener('click', function() {
+        closeModal('noMatchModal');
+      });
+  
+      // Autofill button
+      const autofillButton = document.getElementById('autofill_button');
+  
+      autofillButton
+      .addEventListener('click', function() {
+        var splitId = document.getElementById('split_id').value;
+        var lotId = document.getElementById('lot_id').value;
+        var lotIdSuffix = document.getElementById('lot_id_suffix').value;
+  
+        // Call the function to fetch data from Google Sheets (server-side)
+        google.script.run.withSuccessHandler(autoFillForm).fetchFormData(splitId, lotId, lotIdSuffix);
+      });
+  
+      // Save button
+      const saveButton = document.getElementById('saveButton');
+  
+      if (saveButton) {
+        saveButton.addEventListener('click', submitSave);
+      }
+      else {
+        console.error('Save button not found.')
+      }
+  
+      // Close button for validation modal
+      document.getElementById('closeVModal').addEventListener('click', function() {
+        closeModal('validationModal');
+      });   
+  
+      // Submit
+      const submitButton = document.getElementById('submit');
+  
+      if(submitButton) {
+        submitButton.addEventListener('click', submitForm);
+      }
+      else {
+        console.error("Submit button not found.")
+      }
+    });
+  </script>

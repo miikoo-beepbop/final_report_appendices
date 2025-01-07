@@ -1,0 +1,70 @@
+<!-- mainform.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width-device-width, inital-scale=1">
+  <title>Merged ET Form</title>
+
+  <!-- Link to Bootstrap Css -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+  <!-- Include CSS -->
+  <?!= include('style.html') ?>
+</head>
+
+<body>
+
+  <!-- Include Javascript -->
+  <?!= include('script.html') ?>
+
+  <div class="background">
+    <div class="container p-5 my-5 border">
+      <h1>[Intern]Merged ET Form</h1>
+      <h4>1st Process Data Entry</h4>
+
+      <form id="mainForm" onsubmit="return validateForm()" action="https://script.google.com/macros/s/AKfycbwd_4iW0D6muW14wSnWGXNwkVuA4FrmwpMLDtMVRMoX75WWn8N_ypBoYSrcq8rSS7I/exec" method="POST">
+        
+        <div id="form">
+          <?!= include('form.html') ?>
+        </div>
+
+        <div id="noMatchView">
+          <?!= include('noMatch.html') ?>
+        </div>
+
+        <div id="saveView">
+          <?!= include('save.html') ?>
+        </div>
+
+        <div id="validationView">
+          <?!= include('validation.html') ?>
+        </div>
+
+        <div id="overview">
+          <?!= include('overview.html') ?>
+        </div>
+
+        <div id="submitView">
+          <?!= include('submit.html') ?>
+        </div>
+
+        <div class="buttons">
+          <!-- Save button -->
+          <button type="button" id="saveButton" class="btn btn-primary" onsubmit="submitSave()">Save</button>
+
+          <!-- Overview button -->
+          <button type="button" id="overviewButton" class="btn btn-primary">Overview</button>
+
+          <!-- Submit button -->
+          <button type="submit" id="submit" class="btn btn-primary" onsubmit="submitForm()">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
+
