@@ -1,0 +1,1168 @@
+<!-- form.html -->
+
+<form>
+
+    <!-- Done By -->
+    <fieldset class="set">
+      <legend>Done By (完成者)</legend>
+  
+      <!-- Testing -->
+      <div class="mb-3 form-group">
+        <label for="done_by_1" class="form-label">
+          Testing<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="done_by_1" name="done_by_1" class="form-control" maxlength="10">
+          <div id="done_by_1_desc" class="form-text form-text-below">Scan by Bar Code</div>
+          <span id="done_by_1_error" class="text-danger"></span>
+        </div>
+      </div>
+  
+      <!-- Tracing -->
+      <div class="mb-3 form-group">
+        <label for="done_by_2" class="form-label">
+          Tracing<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="done_by_2" name="done_by_2" class="form-control" maxlength="10">
+          <div id="done_by_2_desc" class="form-text form-text-below">Scan by Bar Code</div>
+          <span id="done_by_2_error" class="text-danger"></span>
+        </div>
+      </div>
+    </fieldset>
+  
+    <!-- Lot No -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        Full Lot No (订单号)<span class="text-danger">*</span>
+        <!-- Autofill Button -->
+        <!-- <div> -->
+          <button type="button" id="autofill_button" class="btn btn-secondary">Autofill</button>
+        <!-- </div> -->
+      </label>
+      <div class="input-container">
+        <div class="row">
+            
+          <!-- Split ID -->
+          <div class="col-auto">
+            <label for="split_id" class="sub-label">Split ID (If any)</label>
+            <select id="split_id" name="split_id" class="form-select same-width">
+              <option value="" selected>N/A</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="CCN">CCN</option>
+            </select>
+          </div>
+  
+          <!-- Lot ID -->
+          <div class="col-auto">
+            <label for="lot_id" class="sub-label">
+              Lot ID<span class="text-danger">*</span>
+            </label>
+            <input type="text" id="lot_id" aria-describedby="lot_id_desc" name="lot_id" class="form-control same-width" maxlength="10">
+            <div id="lot_id_desc" class="form-text form-text-below">Scan by Bar Code</div>
+            <span id="lot_id_error" class="text-danger"></span>
+          </div>
+  
+          <!-- Lot ID Suffix -->
+          <div class="col-auto">
+            <label for="lot_id_suffix" class="sub-label">
+              Lot ID Suffix
+            </label>
+            <select id="lot_id_suffix" name="lot_id_suffix" class="form-select same-width">
+              <option value="" selected>N/A</option>
+              <option value="(2 in 1, part 1)">2 in 1, part 1</option>
+              <option value="(2 in 1, part 2)">2 in 1, part 2</option>
+              <option value="(4Wire)">4Wire</option>
+              <option value="(680)">680</option>
+              <option value="(680, test 1)">680, test 1</option>
+              <option value="(680, test 2)">680, test 2</option>
+              <option value="(Fix A)">Fix A</option>
+              <option value="(Fix B)">Fix B</option>
+              <option value="(Reflow)">Reflow</option>
+              <option value="(Resistive)">Resistive</option>
+              <option value="(Rework)">Rework</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+          
+    <!-- Tool Number -->
+    <div class="mb-3 form-group">
+      <label for="tool_number" class="form-label">
+        Tool Number (S No.) (测试工号)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <input type="text" class="form-control" name="tool_number" id="tool_number" maxlength="10">
+        <span id="tool_number_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Kevin Probe Test -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        Kevin Probe Test (四线测试)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="kevin_probe_test_yes" name="kevin_probe_test" value="Yes" class="form-check-input black-border">
+            <label for="kevin_probe_test_yes" class="form-check-label">Yes</label>
+          </div>
+          <div> 
+            <input type="radio" id="kevin_probe_test_no" name="kevin_probe_test" value="No" class="form-check-input black-border">
+            <label for="kevin_probe_test_no" class="form-check-label">No</label>
+          </div>
+        </div>
+        <span id="kevin_probe_test_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- For 4Wire -->
+    <div class="mb-3 form-group hide" id="for_4wire_input_div">
+      <label for="for_4wire_input" class="form-label"> 
+        For 4Wire (适用四线测试)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <select id="for_4wire_input" name="for_4wire_input" class="form-select">
+          <option value="" disabled selected>Select For 4Wire</option>
+          <option value="BoardForm">BoardForm</option>
+          <option value="PanelForm">PanelForm</option>
+          <option value="PanelForm Sampling">PanelForm Sampling</option>
+        </select>
+        <span id="for_4wire_input_error" class="text-danger"></span>
+      </div>
+    </div>
+      
+    <!-- Date Code -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        Date Code (生产周期代码)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="date_code_yes" name="date_code" value="Yes" class="form-check-input black-border">
+            <label for="date_code_yes" class="form-check-label">Yes</label>
+          </div>
+          <div>
+            <input type="radio" id="date_code_no" name="date_code" value="No" class="form-check-input black-border">
+            <label for="date_code_no" class="form-check-label">No</label>
+          </div>
+        </div>
+        <span id="date_code_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Date Code Input -->
+    <div class="mb-3 form-group hide" id="date_code_input_div">
+      <label for="date_code_input" class="form-label">
+        Date Code (生产周期代码)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <input type="text" id="date_code_input" name="date_code_input" class="form-control">
+        <span id="date_code_input_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Job Type -->
+    <div class="mb-3 form-group">
+      <label for="job_type" class="form-label">
+        Job Type (工作类型)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <select id="job_type" name="job_type"class="form-select">
+          <option value="" disabled selected>Select Job Type</option>
+          <option value="COM">COM</option>
+          <option value="Convert to QTA">Convert to QTA</option>
+          <option value="Cu VF">Cu VF</option>
+          <option value="Cu VF IST">Cu VF IST</option>
+          <option value="DT">DT</option>
+          <option value="EVAL">EVAL</option>
+          <option value="IST Required">IST Required</option>
+          <option value="Military">Military</option>
+          <option value="ML">ML</option>
+          <option value="NPI">NPI</option>
+          <option value="NPI Remake">NPI Remake</option>
+          <option value="NPI Sample">NPI Sample</option>
+          <option value="QTA">QTA</option>
+          <option value="QTA NPI">QTA NPI</option>
+          <option value="QTA Remake">QTA Remake</option>
+          <option value="Remake">Remake</option>
+          <option value="RMA">RMA</option>
+          <option value="RMA Remake">RMA Remake</option>
+          <option value="RMK">RMK</option>
+          <option value="Sample">Sample</option>
+          <option value="Standard">Standard</option>
+          <option value="STD AERO">STD AERO</option>
+          <option value="Wire Bonding">Wire Bonding</option>
+        </select>
+        <span id="job_type_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Machine -->
+    <div class="mb-3 form-group">
+      <label for="machine" class="form-label">
+        Machine (机器)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <select id="machine" name="machine" class="form-select">
+          <option value="" disabled selected>Select Machine</option>
+          <option value="4033">4033</option>
+          <option value="6151(1)">6151(1)</option>
+          <option value="6151(2)">6151(2)</option>
+          <option value="6151(3)">6151(3)</option>
+          <option value="8161(1)">8161(1)</option>
+          <option value="8161(2)">8161(2)</option>
+          <option value="Atg-A9">Atg-A9</option>
+          <option value="KAIMA">KAIMA</option>
+          <option value="LM 400">LM 400</option>
+          <option value="LM1">LM1</option>
+          <option value="LM2">LM2</option>
+          <option value="Mega">Mega</option>
+          <option value="SCT">SCT</option>
+          <option value="Versa">Versa</option>
+        </select>
+        <span id="machine_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- X-Cut Allowed -->
+    <div class="mb-3 form-group">
+      <label for="xcut_allowed" class="form-label">
+        X-Cut Allowed (允许打 X )<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <select id="xcut_allowed" name="xcut_allowed" class="form-select">
+          <option value="" disabled selected>Select X-Cut Allowed</option>
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+        <span id="xcut_allowed_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- IPC Class -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        IPC Class (IPC 等级)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="IPC_class_1" name="ipc_class" value="1" class="form-check-input black-border">
+            <label for="IPC_class_1" class="form-check-label">1</label>
+          </div>
+          <div>
+            <input type="radio" id="IPC_class_2" name="ipc_class" value="2" class="form-check-input black-border">
+            <label for="IPC_class_2" class="form-check-label">2</label>
+          </div>
+          <div>
+            <input type="radio" id="IPC_class_3" name="ipc_class" value="3" class="form-check-input black-border">
+            <label for="IPC_class_3" class="form-check-label">3</label>
+          </div>
+        </div>
+        <span id="ipc_class_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Mass Lam -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        Mass Lam<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="mass_lam_yes" name="mass_lam" value="Yes" class="form-check-input black-border">
+            <label for="mass_lam_yes" class="form-check-label">Yes</label>
+          </div>
+          <div>
+            <input type="radio" id="mass_lam_no" name="mass_lam" value="No" class="form-check-input black-border">
+            <label for="mass_lam_no" class="form-check-label">No</label>
+          </div>
+        </div>
+        <span id="mass_lam_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Resistive -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        Resistive (电阻式)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="resistive_yes" name="resistive" value="Yes" class="form-check-input black-border">
+            <label for="resistive_yes" class="form-check-label">Yes</label>
+          </div>
+          <div>
+            <input type="radio" id="resistive_no" name="resistive" value="No" class="form-check-input black-border">
+            <label for="resistive_no" class="form-check-label">No</label>
+          </div>
+        </div>
+        <span id="resistive_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Continuity -->
+    <div class="mb-3 form-group">
+      <label for="continuity" class="form-label">
+        Continuity (连续性) (Ω)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <input type="text" id="continuity" name="continuity" class="form-control" maxlength="20">
+        <span id="continuity_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Test Voltage -->
+    <div class="mb-3 form-group">
+      <label for="test_voltage" class="form-label">
+        Test Voltage (测试电压) (V)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <input type="text" id="test_voltage" name="test_voltage" class="form-control" maxlength="20">
+        <span id="test_voltage_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Isolation -->
+    <div class="mb-3 form-group">
+      <label for="isolation" class="form-label">
+        Isolation (绝缘性) (MΩ)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <input type="text" id="isolation" name="isolation" class="form-control" maxlength="20">
+        <span id="isolation_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Adjacency Used -->
+    <div class="mb-3 form-group">
+      <label class="form-label">
+        Adjacency Used (适用相邻网络)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="adjacency_used_yes" name="adjacency_used" value="Yes" class="form-check-input black-border">
+            <label for="adjacency_used_yes" class="form-check-label">Yes</label>
+          </div>
+          <div>
+            <input type="radio" id="adjacency_used_no" name="adjacency_used" value="No" class="form-check-input black-border">
+            <label for="adjacency_used_no" class="form-check-label">No</label>
+          </div>
+        </div>
+        <span id="adjacency_used_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <fieldset class="set">
+      <legend>Pass Qty Details (合格板数量详情)</legend>
+  
+      <!-- Mfg Qty -->
+      <div class="mb-3 form-group">
+        <label for="mfg_qty" class="form-label">
+          Mfg Qty (生产数量)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="mfg_qty" name="mfg_qty" data-label="Mfg Qty" class="form-control" maxlength="20">
+          <span id="mfg_qty_error" class="text-danger"></span>
+        </div>
+      </div>
+  
+      <!-- Tested Qty -->
+      <div class="mb-3 form-group">
+        <label for="tested_qty" class="form-label">
+          Tested Qty (测试数量)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="tested_qty" name="tested_qty" data-label="Tested Qty" class="form-control" maxlength="20">
+          <span id="tested_qty_error" class="text-danger"></span>
+        </div>
+      </div>
+  
+      <!-- 1st Passed Qty -->
+      <div class="mb-3 form-group">
+        <label for="first_passed_qty" class="form-label">
+          1st Passed Qty (首次通过数量)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="first_passed_qty" name="first_passed_qty" data-label="1st Passed Qty" class="form-control" maxlength="20">
+          <span id="first_passed_qty_error" class="text-danger"></span>
+        </div>
+      </div>
+    </fieldset>
+  
+    <fieldset class="set">
+      <legend>Total Qty Fallout (不合格板总数)</legend>
+  
+      <!-- Open -->
+      <div class="mb-3 form-group">
+        <label for="open" class="form-label">
+          Open (开路)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="open" name="open" class="form-control" maxlength="20">
+          <span id="open_error" class="text-danger"></span>
+        </div>
+      </div>
+  
+      <!-- Short -->
+      <div class="mb-3 form-group">
+        <label for="short" class="form-label">
+          Short (短路)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="short" name="short" class="form-control" maxlength="20">
+          <span id="short_error" class="text-danger"></span>
+        </div>
+      </div>
+  
+      <!-- SDP -->
+      <div class="mb-3 form-group">
+        <label for="SDP" class="form-label">
+          SDP (生产过程中报废)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="SDP" name="sdp" class="form-control" maxlength="20">
+          <span id="SDP_error" class="text-danger"></span>
+        </div>
+      </div>
+    </fieldset>
+  
+    <!-- Total Qty Error Message -->
+    <div class="mb-3">
+      <span id="total_qty_error" class="text-danger"></span>
+    </div>
+  
+    <!-- Open Circuit Defects -->
+    <div id="open_circuit_dropdown" class="mb-3 hidden form-group">
+      <label for="open_circuit_defect" class="form-label">
+        Open Circuit Due To (开路原因)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <select id="open_circuit_defect" name="open_circuit_defect" class="form-select" size="8">
+          <option value="Innerlayer Open">Innerlayer Open</option>
+          <option value="Void Hole">Void Hole</option>
+          <option value="Partial Feature (Blind Via Void)">Partial Feature (Blind Via Void)</option>
+          <option value="Lifted Feature (Circuit Peel-Off)">Lifted Feature (Circuit Peel-off)</option>
+          <option value="Missing Hole">Missing Hole</option>
+          <option value="Outerlayer Open">Outerlayer Open</option>
+          <option value="Mask on Pad/Finger">Mask on Pad/Finger</option>
+          <option value="Plating Nodule (Particle in Hole)">Plating Nodule (Particle in Hole)</option>
+          <option value="Legend on Pad/Hole">Legend on Pad/Hole</option>
+          <option value="Others Open">Others Open</option>
+          <option value="False o/c">False o/c</option>
+        </select>
+        <span id="open_circuit_dropdown_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Hidden input -->
+    <input type="hidden" id="open_circuit_selection" name="open_circuit_selection" value="">
+  
+    <!-- OPEN -->
+    <!-- Innerlayer Open -->
+    <fieldset id="innerlayer_open_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Innerlayer Open</legend>
+      <div class="mb-3 form-group">
+        <label for="080_il_strip" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>080 IL_STRIP
+        </label>
+        <div class="input-container">
+          <input type="text" id="080_il_strip" name="il_strip_080" class="form-control" maxlength="20">
+          <span id="080_il_strip_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="innerlayer_open_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Void Hole -->
+    <fieldset id="void_hole_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Void Hole</legend>
+      <div class="mb-3 form-group">
+        <label for="chema_180_ol_cm_dm_o" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>CHEM A 180 OL_CM_DM_O
+        </label>
+        <div class="input-container">
+          <input type="text" id="chema_180_ol_cm_dm_o" name="chema_180_ol_cm_dm_o" class="form-control" maxlength="20">
+          <span id="chema_180_ol_cm_dm_o_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="void_hole_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Partial Feature (Blind Via Void) -->
+    <fieldset id="partial_feature_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Partial Feature (Blind Via Void)</legend>
+      <div class="mb-3 form-group">
+        <label for="chema_477_ol_cm_dm_o" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem A 477 OL_CM_DM_O
+        </label>
+        <div class="input-container">
+          <input type="text" id="chema_477_ol_cm_dm_o" name="chema_477_ol_cm_dm_o" class="form-control" maxlength="20">
+          <span id="chema_477_ol_cm_dm_o_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="partial_feature_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Lifted Feature (Circuit Peel-Off) -->
+    <fieldset id="lifted_feature_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Lifted Feature (Circuit Peel-Off)</legend>
+      <div class="mb-3 form-group">
+        <label for="473_ol_lpsm_cure" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>473 OL_LPSM_CURE
+        </label>
+        <div class="input-container">
+          <input type="text" id="473_ol_lpsm_cure" name="ol_lpsm_cure_473" class="form-control" maxlength="20">
+          <span id="473_ol_lpsm_cure_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="473_ol_cm_osp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>473 OL_CM_OSP
+        </label>
+        <div class="input-container">
+          <input type="text" id="473_ol_cm_osp" name="ol_cm_osp_473" class="form-control" maxlength="20">
+          <span id="473_ol_cm_osp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="473_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>473 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="473_ol_cm_strp" name="ol_cm_strp_473" class="form-control" maxlength="20">
+          <span id="473_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="lifted_feature_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Missing Hole -->
+    <fieldset id="missing_hole_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Missing Hole</legend>
+      <div class="mb-3 form-group">
+        <label for="133_ol_drl" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>133 OL_DRL
+        </label>
+        <div class="input-container">
+          <input type="text" id="133_ol_drl" name="ol_drl_133" class="form-control" maxlength="20">
+          <span id="133_ol_drl_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="missing_hole_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Outerlayer Open -->
+    <fieldset id="outerlayer_open_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Outerlayer Open</legend>
+      <div class="mb-3 form-group">
+        <label for="outerlayer_open_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Outerlayer Open
+        </label>
+        <div class="input-container">
+          <input type="text" id="outerlayer_open_repair" name="outerlayer_open_repair" class="form-control" maxlength="20">
+          <span id="outerlayer_open_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="photoprint_080_ol_pp_dev" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Photoprint 080 OL_PP_DEV
+        </label>
+        <div class="input-container">
+          <input type="text" id="photoprint_080_ol_pp_dev" name="photoprint_080_ol_pp_dev" class="form-control" maxlength="20">
+          <span id="photoprint_080_ol_pp_dev_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="outerlayer_open_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Mask on Pad/Finger -->
+    <fieldset id="mask_on_pad_finger_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Mask on Pad/Finger</legend>
+      <div class="mb-3 form-group">
+        <label for="mask_on_pad_finger_repair" class="form-label">
+         <span class="highlight-green"> Qty Repair</span> -<br>Mask on Pad/Finger
+        </label>
+        <div class="input-container">
+          <input type="text" id="mask_on_pad_finger_repair" name="mask_on_pad_finger_repair" class="form-control" maxlength="20">
+          <span id="mask_on_pad_finger_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="205_ol_sm_cure" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>205 OL_SM_CURE
+        </label>
+        <div class="input-container">
+          <input type="text" id="205_ol_sm_cure" name="ol_sm_cure_205" class="form-control" maxlength="20">
+          <span id="205_ol_sm_cure_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="mask_on_pad_finger_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Plating Nodule (Particle in Hole) -->
+    <fieldset id="plating_nodule_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Plating Nodule (Particle in Hole)</legend>
+      <div class="mb-3 form-group">
+        <label for="plating_nodule_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Plating Nodule (Particle in Hole)
+        </label>
+        <div class="input-container">
+          <input type="text" id="plating_nodule_repair" name="plating_nodule_repair" class="form-control" maxlength="20">
+          <span id="plating_nodule_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="178_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>178 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="178_ol_cm_strp" name="ol_cm_strp_178" class="form-control" maxlength="20">
+          <span id="178_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="plating_nodule_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Legend on Pad/Hole -->
+    <fieldset id="legend_on_pad_hole_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Legend on Pad/Hole</legend>
+      <div class="mb-3 form-group">
+        <label for="legend_on_pad_hole_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Legend on Pad/Hole
+        </label>
+        <div class="input-container">
+          <input type="text" id="legend_on_pad_hole_repair" name="legend_on_pad_hole_repair" class="form-control" maxlength="20">
+          <span id="legend_on_pad_hole_repair_error" class="text-danger">
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="233_ol_lpsm_cure" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>233 OL_LPSM_CURE
+        </label>
+        <div class="input-container">
+          <input type="text" id="233_ol_lpsm_cure" name="ol_lpsm_cure_233" class="form-control" maxlength="20">
+          <span id="233_ol_lpsm_cure_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="legend_on_pad_hole_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Others Open -->
+    <fieldset id="others_open_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Others Open</legend>
+      <div class="mb-3 form-group">
+        <label for="others_open_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Others Open
+        </label>
+        <div class="input-container">
+          <input type="text" id="others_open_repair" name="others_open_repair" class="form-control" maxlength="20">
+          <span id="others_open_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="others_open_reject" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Others Open
+        </label>
+        <div class="input-container">
+          <input type="text" id="others_open_reject" name="others_open_reject" class="form-control" maxlength="20">
+          <span id="others_open_reject_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="others_open_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- False o/c -->
+    <fieldset id="false_oc_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">False o/c</legend>
+      <div class="mb-3 form-group">
+        <label for="false_oc_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>False o/c
+        </label>
+        <div class="input-container">
+          <input type="text" id="false_oc_repair" name="false_oc_repair" class="form-control" maxlength="20">
+          <span id="false_oc_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="false_oc_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Short Circuit Defects -->
+    <div id="short_circuit_dropdown" class="mb-3 hidden form-group">
+      <label for="short_circuit_defect" class="form-label">
+        Short Circuit Due To (短路原因)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <select id="short_circuit_defect" name="short_circuit_defect" class="form-select" size="8">
+          <option value="Short (Plating Under Resist) (Dry Film Flake-Off)">Short (Plating Under Resist) (Dry Film Flake-Off)</option>
+          <option value="Scratches">Scratches</option>
+          <option value="Cu Residue">Cu Residue</option>
+          <option value="Under-etch">Under-etch</option>
+          <option value="Innerlayer Short">Innerlayer Short</option>
+          <option value="Mis-registration">Mis-registration</option>
+          <option value="Hole Shifted">Hole Shifted</option>
+          <option value="Short (Mirco-short)">Short (Mirco-short)</option>
+          <option value="Incomplete Solder Strip (Solder Short)">Incomplete Solder Strip (Solder Short)</option>
+          <option value="Feathering (AU Bridging)">Feathering (AU Bridging)</option>
+          <option value="Incomplete Resist Strip">Incomplete Resist Strip</option>
+          <option value="NPTH Short">NPTH Short</option>
+          <option value="Short (Others)">Short (Others)</option>
+          <option value="Pit & Dent (Others)">Pit & Dent (Others)</option>
+          <option value="Foil Wrinkle (Others)">Foil Wrinkle (Others)</option>
+        </select>
+        <span id="short_circuit_dropdown_error" class="text-danger form-error"></span>
+      </div>
+    </div>
+  
+    <!-- Hidden input -->
+    <input type="hidden" id="short_circuit_selection" name="short_circuit_selection" value="">
+  
+    <!-- SHORT -->
+    <!-- Short -->
+    <fieldset id="short_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Short (Plating Under Resist) (Dry Film Flake-Off)</legend>
+      <div class="mb-3 form-group">
+        <label for="short_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Short (Plating Under Resist) (Dry Film Flake-Off)
+        </label>
+        <div class="input-container">
+          <input type="text" id="short_repair" name="short_repair" class="form-control" maxlength="20">
+          <span id="short_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="photoprint_083_ol_pp_dev" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Photoprint 083 OL_PP_DEV
+        </label>
+        <div class="input-container">
+          <input type="text" id="photoprint_083_ol_pp_dev" name="photoprint_083_ol_pp_dev" class="form-control" maxlength="20">
+          <span id="photoprint_083_ol_pp_dev_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="short_plating_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Scratches -->
+    <fieldset id="scratches_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Scratches</legend>
+      <div class="mb-3 form-group">
+        <label for="scratches_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Scratches
+        </label>
+        <div class="input-container">
+          <input type="text" id="scratches_repair" name="scratches_repair" class="form-control" maxlength="20">
+          <span id="scratches_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="photoprint_483_ol_pp_dev" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Photoprint 483 OL_PP_DEV
+        </label>
+        <div class="input-container">
+          <input type="text" id="photoprint_483_ol_pp_dev" name="photoprint_483_ol_pp_dev" class="form-control" maxlength="20">
+          <span id="photoprint_483_ol_pp_dev_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemb_483_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem B 483 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemb_483_ol_cm_strp" name="chemb_483_ol_cm_strp" class="form-control" maxlength="20">
+          <span id="chemb_483_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemc_483_ol_cm_osp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem C 483 OL_CM_OSP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemc_483_ol_cm_osp" name="chemc_483_ol_cm_osp" class="form-control" maxlength="20">
+          <span id="chemc_483_ol_cm_osp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="scratches_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Cu Residue -->
+    <fieldset id="cu_residue_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Cu Residue</legend>
+      <div class="mb-3 form-group">
+        <label for="cu_residue_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Cu Residue
+        </label>
+        <div class="input-container">
+          <input type="text" id="cu_residue_repair" name="cu_residue_repair" class="form-control" maxlength="20">
+          <span id="cu_residue_repair_error" class="fieldset-error text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemb_172_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem B 172 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemb_172_ol_cm_strp" name="chemb_172_ol_cm_strp" class="form-control" maxlength="20">
+          <span id="chemb_172_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="cu_residue_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Under-etch -->
+    <fieldset id="under_etch_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Under-etch</legend>
+      <div class="mb-3 form-group">
+        <label for="under_etch_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Under-etch
+        </label>
+        <div class="input-container">
+          <input type="text" id="under_etch_repair" name="under_etch_repair" class="form-control" maxlength="20">
+          <span id="under_etch_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemb_076_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem B 076 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemb_076_ol_cm_strp" name="chemb_076_ol_cm_strp" class="form-control" maxlength="20">
+          <span id="chemb_076_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="under_etch_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Innerlayer Short -->
+    <fieldset id="innerlayer_short_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Innerlayer Short</legend>
+      <div class="mb-3 form-group">
+        <label for="083_il_strip" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>083 IL_STRIP
+        </label>
+        <div class="input-container">
+          <input type="text" id="083_il_strip" name="il_strip_083" class="form-control" maxlength="20">
+          <span id="083_il_strip_error" class="text-danger"></span> 
+        </div>
+      </div>
+      <span id="innerlayer_short_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Mis-registration -->
+    <fieldset id="mis_registration_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Mis-registration</legend>
+      <div class="mb-3 form-group">
+        <label for="mis_registration_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Mis-registration
+        </label>
+        <div class="input-container">
+          <input type="text" id="mis_registration_repair" name="mis_registration_repair" class="form-control" maxlength="20">
+          <span id="mis_registration_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="471_ol_lam" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>471 OL_LAM
+        </label>
+        <div class="input-container">
+          <input type="text" id="471_ol_lam" name="ol_lam_471" class="form-control" maxlength="20">
+          <span id="471_ol_lam_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="469_ol_lam" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>469 OL_LAM
+        </label>
+        <div class="input-container">
+          <input type="text" id="469_ol_lam" name="ol_lam_469" class="form-control" maxlength="20">
+          <span id="469_ol_lam_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="mis_registration_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Hole Shifted -->
+    <fieldset id="hole_shifted_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Hole Shifted</legend>
+      <div class="mb-3 form-group">
+        <label for="132_ol_drl" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>132 OL_DRL
+        </label>
+        <div class="input-container">
+          <input type="text" id="132_ol_drl" name="ol_drl_132" class="form-control" maxlength="20">
+          <span id="132_ol_drl_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="hole_shifted_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Short (Mirco-short) -->
+    <fieldset id="micro_short_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Short (Micro-Short)</legend>
+      <div class="mb-3 form-group">
+        <label for="micro_short_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Short (Mirco-short)
+        </label>
+        <div class="input-container">
+          <input type="text" id="micro_short_repair" name="micro_short_repair" class="form-control" maxlength="20">
+          <span id="micro_short_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemb_083_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem B 083 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemb_083_ol_cm_strp" name="chemb_083_ol_cm_strp" class="form-control" maxlength="20">
+          <span id="chemb_083_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="lpsm_083_ol_sm_cure" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>LPSM 083 OL_SM_CURE
+        </label>
+        <div class="input-container">
+          <input type="text" id="lpsm_083_ol_sm_cure" name="lpsm_083_ol_sm_cure" class="form-control" maxlength="20">
+          <span id="lpsm_083_ol_sm_cure_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="micro_short_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Incomplete Solder Strip (Solder Short) -->
+    <fieldset id="incomplete_solder_strip_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Incomplete Solder Strip (Solder Short)</legend>
+      <div class="mb-3 form-group">
+        <label for="incomplete_solder_strip_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Incomplete Solder Strip (Solder Short)
+        </label>
+        <div class="input-container">
+          <input type="text" id="incomplete_solder_strip_repair" name="incomplete_solder_strip_repair" class="form-control" maxlength="20">
+          <span id="incomplete_solder_strip_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemc_256_ol_cm_osp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem C 256 OL_CM_OSP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemc_256_ol_cm_osp" name="chemc_256_ol_cm_osp" class="form-control" maxlength="20">
+          <span id="chemc_256_ol_cm_osp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="incomplete_solder_strip_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Feathering (AU Bridging) -->
+    <fieldset id="feathering_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Feathering (AU Bridging)</legend>
+      <div class="mb-3 form-group">
+        <label for="feathering_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Feathering (AU Bridging)
+        </label>
+        <div class="input-container">
+          <input type="text" id="feathering_repair" name="feathering_repair" class="form-control" maxlength="20">
+          <span id="feathering_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemc_250_ol_cm_osp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem C 250 OL_CM_OSP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemc_250_ol_cm_osp" name="chemc_250_ol_cm_osp" class="form-control" maxlength="20">
+          <span id="chemc_250_ol_cm_osp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="feathering_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Incomplete Resist Strip -->
+    <fieldset id="incomplete_resist_strip_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Incomplete Resist Strip</legend>
+      <div class="mb-3 form-group">
+        <label for="incomplete_resist_strip_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Incomplete Resist Strip
+        </label>
+        <div class="input-container">
+          <input type="text" id="incomplete_resist_strip_repair" name="incomplete_resist_strip_repair" class="form-control" maxlength="20">
+          <span id="incomplete_resist_strip_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="chemb_51_ol_cm_strp" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Chem B 51 OL_CM_STRP
+        </label>
+        <div class="input-container">
+          <input type="text" id="chemb_51_ol_cm_strp" name="chemb_51_ol_cm_strp" class="form-control" maxlength="20">
+          <span id="chemb_51_ol_cm_strp_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="incomplete_resist_strip_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- NPTH Short -->
+    <fieldset id="npth_short_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">NPTH Short</legend>
+      <div class="mb-3 form-group">
+        <label for="npth_short_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>NPTH Short
+        </label>
+        <div class="input-container">
+          <input type="text" id="npth_short_repair" name="npth_short_repair" class="form-control" maxlength="20">
+          <span id="npth_short_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="142" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>142
+        </label>
+        <div class="input-container">
+          <input type="text" id="142" name="hello_142" class="form-control" maxlength="20">
+          <span id="142_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="npth_short_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Short (Others) -->
+    <fieldset id="short_others_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Short (Others)</legend>
+      <div class="mb-3 form-group">
+        <label for="short_others_repair" class="form-label">
+          <span class="highlight-green">Qty Repair</span> -<br>Short (Others)
+        </label>
+        <div class="input-container">
+          <input type="text" id="short_others_repair" name="short_others_repair" class="form-control" maxlength="20">
+          <span id="short_others_repair_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="short_others_reject" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>Short (Others)
+        </label>
+        <div class="input-container">
+          <input type="text" id="short_others_reject" name="short_others_reject" class="form-control" maxlength="20">
+          <span id="short_others_reject_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="short_others_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Pit & Dent (Others) -->
+    <fieldset id="pit_dent_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Pit & Dent (Others)</legend>
+      <div class="mb-3 form-group">
+        <label for="479_ol_lam" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>479 OL_LAM
+        </label>
+        <div class="input-container">
+          <input type="text" id="479_ol_lam" name="ol_lam_479" class="form-control" maxlength="20">
+          <span id="479_ol_lam_error" class="text-danger"></span>
+        </div>
+      </div>
+      <div class="mb-3 form-group">
+        <label for="479_ol_pp_dev" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>479 OL_PP_DEV
+        </label>
+        <div class="input-container">
+          <input type="text" id="479_ol_pp_dev" name="ol_pp_dev_479" class="form-control" maxlength="20">
+          <span id="479_ol_pp_dev_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="pit_dent_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Foil Wrinkle (Others) -->
+    <fieldset id="foil_wrinkle_details" class="fieldset-container hidden set">
+      <legend class="fieldset-header">Foil Wrinkle (Others)</legend>
+      <div class="mb-3 form-group">
+        <label for="32_ol_lam" class="form-label">
+          <span class="highlight-red">Qty Reject</span> -<br>32 OL_LAM
+        </label>
+        <div class="input-container">
+          <input type="text" id="32_ol_lam" name="ol_lam_32" class="form-control" maxlength="20">
+          <span id="32_ol_lam_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="foil_wrinkle_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Impedance Fail -->
+    <div id="impedance_fail" class="mb-3 form-group hidden">
+      <label class="form-label">
+        Impedance Fail (阻抗失效)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <div class="form-check form-check-inline">
+          <div>
+            <input type="radio" id="impedance_fail_yes" name="impedance_fail" value="Yes" class="form-check-input black-border">
+            <label for="impedance_fail_yes" class="form-check-label">Yes</label>
+          </div>
+          <div>
+            <input type="radio" id="impedance_fail_no" name="impedance_fail" value="No" class="form-check-input black-border">
+            <label for="impedance_fail_no" class="form-check-label">No</label>
+          </div>
+        </div>
+        <span id="impedance_fail_error" class="text-danger"></span>
+      </div>
+    </div>
+  
+    <!-- Impedance Fail Qty -->
+    <fieldset id="impedance_fail_qty_details" class="hidden set">
+      <legend>Impedance Fail Qty (阻抗故障数量)</legend>
+  
+      <!-- Impedance Fail High-->
+      <div class="mb-3 form-group">
+        <label class="form-label">
+          High Qty (阻抗高-数量)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="impedance_fail_high" name="impedance_fail_high" class="form-control" maxlength="20">
+          <span id="impedance_fail_high_error" class="text-danger"></span>
+        </div>
+      </div>
+  
+      <!-- Impedance Fail Low-->
+      <div class="mb-3 form-group">
+        <label class="form-label">
+          Low Qty (阻抗低-数量)<span class="text-danger">*</span>
+        </label>
+        <div class="input-container">
+          <input type="text" id="impedance_fail_low" name="impedance_fail_low" class="form-control" maxlength="20">
+          <span id="impedance_fail_low_error" class="text-danger"></span>
+        </div>
+      </div>
+      <span id="impedance_fail_qty_error" class="fieldset-error text-danger"></span>
+    </fieldset>
+  
+    <!-- Final Passed Qty -->
+    <div id="final_passed_qty_div" class="mb-3 form-group hidden">
+      <label for="final_passed_qty" class="form-label">
+        Final Passed Qty (最终合格数量)<span class="text-danger">*</span>
+      </label>
+      <div class="input-container">
+        <input type="text" id="final_passed_qty" name="final_passed_qty" data-label="Final passed Qty" class="form-control">
+        <span id="final_passed_qty_error" class="text-danger form-error"></span>
+      </div>
+    </div>
+  </form>
+  
